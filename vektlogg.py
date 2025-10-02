@@ -23,3 +23,15 @@ def hent_vektlogg():
         return pd.read_csv(FILNAVN)
     else:
         return pd.DataFrame(columns=["Dato", "Vekt"])
+def beregn_fremdrift(startvekt, målvekt, df):
+    """
+    Returnerer prosentvis fremdrift mot målvekten.
+    """
+    if df.empty:
+        return 0, None
+
+    siste_vekt = df["Vekt"].iloc[-1]
+    total_tap = startvekt - målvekt
+    faktisk_tap = startvekt - siste_vekt
+    fremdrift = max(0, min(100, (faktisk_tap / total_tap) * 100))
+    return round(fremdrift, 1), siste_vekt
