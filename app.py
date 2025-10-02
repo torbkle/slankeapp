@@ -17,10 +17,10 @@ st.caption("Enkel kaloriguide som hjelper deg å gå ned i vekt, følge målet o
 st.title("Slankepp 🍽️")
 st.subheader("Din enkle kaloriguide")
 
-# Vektmål
+# Vektmål uten forhåndsverdi
 st.write("### Vektmål 🎯")
-startvekt = st.number_input("Startvekt (kg)", min_value=40.0, max_value=200.0, value=83.0, step=0.1)
-målvekt = st.number_input("Målvekt (kg)", min_value=40.0, max_value=startvekt, value=76.0, step=0.1)
+startvekt = st.number_input("Startvekt (kg)", min_value=40.0, max_value=200.0, step=0.1, format="%.1f")
+målvekt = st.number_input("Målvekt (kg)", min_value=40.0, max_value=200.0, step=0.1, format="%.1f")
 
 # Kaloriinntak
 kalorimål = st.slider("Velg daglig kaloriinntak", 1200, 2500, 1800)
@@ -53,19 +53,21 @@ if not df.empty:
     st.line_chart(df.set_index("Dato")["Vekt"])
     st.write(df.tail())
 
-    # Fremdrift
-    fremdrift, siste_vekt = beregn_fremdrift(startvekt, målvekt, df)
-    st.write(f"**Siste registrerte vekt:** {siste_vekt} kg")
-    st.write(f"**Målvekt:** {målvekt} kg")
-    st.progress(fremdrift / 100)
-    st.write(f"**Fremdrift mot mål:** {fremdrift}%")
+    # Sjekk at startvekt og målvekt er gyldige
+    if startvekt > målvekt:
+        fremdrift, siste_vekt = beregn_fremdrift(startvekt, målvekt, df)
+        st.write(f"**Siste registrerte vekt:** {siste_vekt} kg")
+        st.write(f"**Målvekt:** {målvekt} kg")
+        st.progress(fremdrift / 100)
+        st.write(f"**Fremdrift mot mål:** {fremdrift}%")
 
-    # Prognose
-    est_dager, måldato = estimer_tid_til_mål(startvekt, målvekt, df)
-    if måldato:
-        st.write(f"📅 Estimert tid til målvekt: {est_dager} dager")
-        st.write(f"🎯 Prognose: Du når {målvekt} kg rundt {måldato.strftime('%d.%m.%Y')}")
+        est_dager, måldato = estimer_tid_til_mål(startvekt, målvekt, df)
+        if måldato:
+            st.write(f"📅 Estimert tid til målvekt: {est_dager} dager")
+            st.write(f"🎯 Prognose: Du når {målvekt} kg rundt {måldato.strftime('%d.%m.%Y')}")
+        else:
+            st.info("For lite data til å beregne prognose.")
     else:
-        st.info("For lite data til å beregne prognose.")
+        st.warning("Startvekten må være høyere enn målvekten for å vise fremdrift og prognose.")
 else:
     st.info("Ingen vektdata registrert ennå.")
