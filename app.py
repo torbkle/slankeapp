@@ -1,5 +1,5 @@
 import streamlit as st
-from måltidslogikk import generer_dagsplan
+from måltidslogikk import generer_dagsplan, fordel_kalorier
 from vektlogg import registrer_vekt, hent_vektlogg, beregn_fremdrift
 from datetime import date
 import matplotlib.pyplot as plt
@@ -9,10 +9,21 @@ st.set_page_config(page_title="Slankepp", page_icon="🍽️")
 st.title("Slankepp 🍽️")
 st.subheader("Din enkle kaloriguide")
 
-# Brukerinput for kaloriinntak
+# Vektmål
+st.write("### Vektmål 🎯")
+startvekt = st.number_input("Startvekt (kg)", min_value=40.0, max_value=200.0, value=83.0, step=0.1)
+målvekt = st.number_input("Målvekt (kg)", min_value=40.0, max_value=startvekt, value=76.0, step=0.1)
+
+# Kaloriinntak
 kalorimål = st.slider("Velg daglig kaloriinntak", 1200, 2500, 1800)
 
-# Generer måltidsplan
+# Kalorifordeling
+fordeling = fordel_kalorier(kalorimål)
+st.write("### Kalorifordeling per måltid")
+for kategori, kcal in fordeling.items():
+    st.write(f"{kategori}: {kcal} kcal")
+
+# Måltidsplan
 plan, total = generer_dagsplan(kalorimål)
 
 st.write("### Dagens måltidsforslag")
@@ -24,9 +35,8 @@ for måltid in plan:
 
 st.write(f"**Totalt kalorier i dag:** {total} kcal")
 
-# Vektloggseksjon
+# Vektlogg
 st.write("### Vektlogg 📉")
-
 dagens_vekt = st.number_input("Registrer dagens vekt (kg)", min_value=40.0, max_value=200.0, step=0.1)
 if st.button("Lagre vekt"):
     registrer_vekt(str(date.today()), dagens_vekt)
@@ -37,11 +47,7 @@ if not df.empty:
     st.line_chart(df.set_index("Dato")["Vekt"])
     st.write(df.tail())
 
-    # Fremdrift mot mål
-    startvekt = 83.0
-    målvekt = 76.0
     fremdrift, siste_vekt = beregn_fremdrift(startvekt, målvekt, df)
-
     st.write(f"**Siste registrerte vekt:** {siste_vekt} kg")
     st.write(f"**Målvekt:** {målvekt} kg")
     st.progress(fremdrift / 100)
