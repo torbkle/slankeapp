@@ -1,28 +1,29 @@
 import random
 
-# Enkle måltidsforslag med kalorier og oppskrift
+# Måltidsdatabase med kategori, kalorier og prisestimat
 MÅLTIDER = [
-    {"navn": "Havregrøt med eple", "kalorier": 300, "oppskrift": "Kok havregryn med vann, topp med eplebiter."},
-    {"navn": "Kyllingsalat", "kalorier": 450, "oppskrift": "Grillet kylling, salat, couscous, dressing."},
-    {"navn": "Torsk med grønnsaker", "kalorier": 550, "oppskrift": "Ovnsbakt torsk med brokkoli og gulrot."},
-    {"navn": "Cottage cheese med bær", "kalorier": 350, "oppskrift": "Bland cottage cheese med frosne bær."},
-    {"navn": "Gulrot og hummus", "kalorier": 150, "oppskrift": "Skjær gulrotstaver og dypp i hummus."},
-    {"navn": "Tunfisksalat", "kalorier": 400, "oppskrift": "Tunfisk, salat, mais og lett dressing."},
-    {"navn": "Egg og knekkebrød", "kalorier": 250, "oppskrift": "Kokte egg med grovt knekkebrød og paprika."}
+    {"navn": "Havregrøt med eple", "kategori": "Frokost", "kalorier": 300, "pris": 12, "oppskrift": "Kok havregryn med vann, topp med eplebiter."},
+    {"navn": "Egg og knekkebrød", "kategori": "Frokost", "kalorier": 250, "pris": 10, "oppskrift": "Kokte egg med grovt knekkebrød og paprika."},
+    {"navn": "Kyllingsalat", "kategori": "Lunsj", "kalorier": 450, "pris": 35, "oppskrift": "Grillet kylling, salat, couscous, dressing."},
+    {"navn": "Tunfisksalat", "kategori": "Lunsj", "kalorier": 400, "pris": 25, "oppskrift": "Tunfisk, salat, mais og lett dressing."},
+    {"navn": "Torsk med grønnsaker", "kategori": "Middag", "kalorier": 550, "pris": 40, "oppskrift": "Ovnsbakt torsk med brokkoli og gulrot."},
+    {"navn": "Vegetargryte med linser", "kategori": "Middag", "kalorier": 500, "pris": 30, "oppskrift": "Linser, tomat, løk og krydder kokt sammen."},
+    {"navn": "Gulrot og hummus", "kategori": "Snacks", "kalorier": 150, "pris": 8, "oppskrift": "Skjær gulrotstaver og dypp i hummus."},
+    {"navn": "Cottage cheese med bær", "kategori": "Snacks", "kalorier": 350, "pris": 18, "oppskrift": "Bland cottage cheese med frosne bær."}
 ]
 
 def generer_dagsplan(kalorimål):
     """
-    Returnerer en liste med måltider som til sammen nærmer seg ønsket kalorimål.
+    Returnerer én frokost, én lunsj, én middag og én snack som til sammen nærmer seg kalorimålet.
     """
-    valgt = []
-    total = 0
-    tilgjengelige = MÅLTIDER.copy()
-    random.shuffle(tilgjengelige)
+    plan = []
+    total_kalorier = 0
 
-    for måltid in tilgjengelige:
-        if total + måltid["kalorier"] <= kalorimål:
-            valgt.append(måltid)
-            total += måltid["kalorier"]
+    for kategori in ["Frokost", "Lunsj", "Middag", "Snacks"]:
+        valg = [m for m in MÅLTIDER if m["kategori"] == kategori]
+        måltid = random.choice(valg)
+        plan.append(måltid)
+        total_kalorier += måltid["kalorier"]
 
-    return valgt
+    return plan, total_kalorier
+
