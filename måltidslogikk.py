@@ -26,4 +26,11 @@ def generer_dagsplan(kalorimål):
         total_kalorier += måltid["kalorier"]
 
     return plan, total_kalorier
+def fordel_kalorier(kalorimål):
+    return {
+        "Frokost": int(kalorimål * 0.2),
+        "Lunsj": int(kalorimål * 0.3),
+        "Middag": int(kalorimål * 0.35),
+        "Snacks": int(kalorimål * 0.15)
+    }
 
