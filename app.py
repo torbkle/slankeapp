@@ -1,3 +1,6 @@
+from vektlogg import registrer_vekt, hent_vektlogg
+from datetime import date
+import matplotlib.pyplot as plt
 import streamlit as st
 from måltidslogikk import generer_dagsplan
 
@@ -20,4 +23,19 @@ for måltid in plan:
     st.divider()
 
 st.write(f"**Totalt kalorier i dag:** {total} kcal")
+st.write("### Vektlogg 📉")
+
+# Registrer dagens vekt
+dagens_vekt = st.number_input("Registrer dagens vekt (kg)", min_value=40.0, max_value=200.0, step=0.1)
+if st.button("Lagre vekt"):
+    registrer_vekt(str(date.today()), dagens_vekt)
+    st.success(f"Vekt {dagens_vekt} kg lagret for {date.today()}")
+
+# Vis fremdrift
+df = hent_vektlogg()
+if not df.empty:
+    st.line_chart(df.set_index("Dato")["Vekt"])
+    st.write(df.tail())
+else:
+    st.info("Ingen vektdata registrert ennå.")
 
