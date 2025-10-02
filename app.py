@@ -5,7 +5,9 @@ from datetime import date
 import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="Slankepp", page_icon="🍽️")
-st.image("https://www.infera.no/wp-content/uploads/2025/10/slankeapp.png", use_column_width=True)
+st.image("https://www.infera.no/wp-content/uploads/2025/10/slankeapp.png", use_container_width=True)
+st.caption("Enkel kaloriguide som hjelper deg å gå ned i vekt, følge målet og holde budsjett.")
+
 
 st.title("Slankepp 🍽️")
 st.subheader("Din enkle kaloriguide")
