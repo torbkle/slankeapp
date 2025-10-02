@@ -33,8 +33,21 @@ Slankeapp er en Streamlit-basert app som hjelper deg med å planlegge måltider 
    cd slankeapp
 
 
-Use Control + Shift + m to toggle the tab key moving focus. Alternatively, use esc then tab to move to the next interactive element on the page.
-Ingen fil valgt
-Attach files by dragging & dropping, selecting or pasting them.
-New File at / · torbkle/slankeapp
-Focus on filter text box and list of items, Focused item: MIT License, not selected, 4 of 14
+📈 Veikart
+[x] MVP med statiske måltidsforslag
+
+[ ] Dynamisk kalori-fordeling
+
+[ ] Vektlogg og fremdriftsvisning
+
+[ ] Trening og hvileforbrenning
+
+[ ] Ukesplan og handleliste
+
+[ ] AI-genererte måltider basert på budsjett og preferanser
+
+📄 Lisens
+Denne appen er lisensiert under MIT – fri bruk og videreutvikling oppmuntres!
+
+🤝 Bidra
+Har du forslag til måltider, forbedringer eller funksjoner? Send gjerne en pull request eller åpne en issue.
