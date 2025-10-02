@@ -1,53 +1,52 @@
 # Slankeapp 🍽️
 
-**En enkel kaloriguide med daglige måltidsforslag og vektnedgangsplan.**
-
-Slankeapp er en Streamlit-basert app som hjelper deg med å planlegge måltider basert på ønsket kaloriinntak. Appen gir konkrete forslag til rimelige, kalorifattige måltider – uten behov for detaljert logging av råvarer. Målet er å gjøre vektnedgang og kostholdsplanlegging enkelt, effektivt og tilpasset norske forhold.
+**Slankeapp** er en enkel, norskutviklet kaloriguide for deg som ønsker å gå ned i vekt på en realistisk og motiverende måte. Appen gir daglige måltidsforslag, fremdriftsvisning og prognose basert på personlig informasjon – helt uten innlogging eller kompleks registrering.
 
 ---
 
 ## 🚀 Funksjoner
 
-- Velg ønsket daglig kaloriinntak
-- Få forslag til frokost, lunsj, middag og snacks
-- Se oppskrift og estimert kaloriinnhold per måltid
-- Minimal input – maksimal nytte
-- Klar for utvidelse med vektlogg, treningsforbruk og AI-genererte menyer
+- **Personlig kaloriestimat** basert på høyde, alder, kjønn og startvekt
+- **Automatisk beregning av BMR og TDEE**
+- **Kalorifordeling per måltid** (frokost, lunsj, middag, snacks)
+- **Dynamisk måltidsplan** med oppskrift og prisestimat
+- **Vektlogg med graf og fremdrift**
+- **Prognosemodul** som estimerer tid og dato til målvekten
+- **Ingen innlogging – full anonymitet**
 
 ---
 
-## 🛠️ Teknologi
+## 🧪 Teknologi
 
-- **Python 3.10+**
-- **Streamlit** for frontend
-- Modulbasert struktur for enkel videreutvikling
-- Planlagt integrasjon med Pandas og Scikit-learn
+- Python
+- Streamlit
+- Pandas
+- Matplotlib
 
 ---
 
-## 📦 Installasjon
+## 📦 Struktur
 
-1. Klon repoet:
-   ```bash
-   git clone https://github.com/torbkle/slankeapp.git
-   cd slankeapp
+- `app.py` – hovedgrensesnitt og logikk
+- `måltidslogikk.py` – dynamisk måltidsvalg og kalorifordeling
+- `vektlogg.py` – vektregistrering, fremdrift og prognose
+- `vektlogg.csv` – lokal lagring av vektdata
 
+---
 
-📈 Veikart
-[x] MVP med statiske måltidsforslag
+## 🔗 Prøv appen
 
-[ ] Dynamisk kalori-fordeling
+👉 [Åpne Slankeapp i nettleseren](https://slankeapp-niwj5tnqimn4vs69j2ofsg.streamlit.app)
 
-[ ] Vektlogg og fremdriftsvisning
+---
 
-[ ] Trening og hvileforbrenning
+## 👤 Utviklet av
 
-[ ] Ukesplan og handleliste
+Torbjørn Kleiven – [infera.no](https://www.infera.no)
 
-[ ] AI-genererte måltider basert på budsjett og preferanser
+---
 
-📄 Lisens
-Denne appen er lisensiert under MIT – fri bruk og videreutvikling oppmuntres!
+## 📄 Lisens
 
-🤝 Bidra
-Har du forslag til måltider, forbedringer eller funksjoner? Send gjerne en pull request eller åpne en issue.
+MIT License
+
