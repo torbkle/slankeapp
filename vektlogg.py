@@ -1,5 +1,5 @@
 import pandas as pd
-import os
+from datetime import datetime, timedelta
 
 FILNAVN = "vektlogg.csv"
 
@@ -8,21 +8,24 @@ def registrer_vekt(dato, vekt):
     Legger til ny vektregistrering i CSV-filen.
     """
     ny_rad = pd.DataFrame({"Dato": [dato], "Vekt": [vekt]})
-    if os.path.exists(FILNAVN):
-        df = pd.read_csv(FILNAVN)
-        df = pd.concat([df, ny_rad], ignore_index=True)
-    else:
+    try:
+        eksisterende = pd.read_csv(FILNAVN)
+        df = pd.concat([eksisterende, ny_rad], ignore_index=True)
+    except FileNotFoundError:
         df = ny_rad
     df.to_csv(FILNAVN, index=False)
 
 def hent_vektlogg():
     """
-    Returnerer hele vektloggen som DataFrame.
+    Leser vektdata fra CSV og returnerer som DataFrame.
     """
-    if os.path.exists(FILNAVN):
-        return pd.read_csv(FILNAVN)
-    else:
+    try:
+        df = pd.read_csv(FILNAVN)
+        df["Dato"] = pd.to_datetime(df["Dato"])
+        return df.sort_values("Dato")
+    except FileNotFoundError:
         return pd.DataFrame(columns=["Dato", "Vekt"])
+
 def beregn_fremdrift(startvekt, målvekt, df):
     """
     Returnerer prosentvis fremdrift mot målvekten.
@@ -35,7 +38,6 @@ def beregn_fremdrift(startvekt, målvekt, df):
     faktisk_tap = startvekt - siste_vekt
     fremdrift = max(0, min(100, (faktisk_tap / total_tap) * 100))
     return round(fremdrift, 1), siste_vekt
-from datetime import datetime, timedelta
 
 def estimer_tid_til_mål(startvekt, målvekt, df):
     """
@@ -44,9 +46,7 @@ def estimer_tid_til_mål(startvekt, målvekt, df):
     if df.shape[0] < 2:
         return None, None  # Ikke nok data
 
-    df["Dato"] = pd.to_datetime(df["Dato"])
     df = df.sort_values("Dato")
-
     dager = (df["Dato"].iloc[-1] - df["Dato"].iloc[0]).days
     vekttap = df["Vekt"].iloc[0] - df["Vekt"].iloc[-1]
 
