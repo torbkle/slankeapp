@@ -17,13 +17,36 @@ st.caption("Enkel kaloriguide som hjelper deg å gå ned i vekt, følge målet o
 st.title("Slankepp 🍽️")
 st.subheader("Din enkle kaloriguide")
 
-# Vektmål uten forhåndsverdi
+# Brukerdata
+st.write("### Personlig informasjon 🧍")
+kjønn = st.radio("Kjønn", ["Mann", "Kvinne"])
+alder = st.number_input("Alder", min_value=10, max_value=100, step=1)
+høyde = st.number_input("Høyde (cm)", min_value=120.0, max_value=220.0, step=0.5)
+
+# Vektmål
 st.write("### Vektmål 🎯")
 startvekt = st.number_input("Startvekt (kg)", min_value=40.0, max_value=200.0, step=0.1, format="%.1f")
 målvekt = st.number_input("Målvekt (kg)", min_value=40.0, max_value=200.0, step=0.1, format="%.1f")
 
+# Beregn BMR og TDEE
+def beregn_bmr(vekt, høyde, alder, kjønn):
+    if kjønn == "Mann":
+        return 10 * vekt + 6.25 * høyde - 5 * alder + 5
+    else:
+        return 10 * vekt + 6.25 * høyde - 5 * alder - 161
+
+if startvekt and høyde and alder:
+    bmr = beregn_bmr(startvekt, høyde, alder, kjønn)
+    tdee = bmr * 1.4  # Moderat aktiv
+    anbefalt_kalorimål = int(tdee - 500)
+    st.write(f"🧮 Beregnet BMR: {int(bmr)} kcal/dag")
+    st.write(f"⚙️ Estimert TDEE: {int(tdee)} kcal/dag")
+    st.write(f"🎯 Anbefalt kaloriinntak for vektnedgang: {anbefalt_kalorimål} kcal/dag")
+else:
+    anbefalt_kalorimål = 1800
+
 # Kaloriinntak
-kalorimål = st.slider("Velg daglig kaloriinntak", 1200, 2500, 1800)
+kalorimål = st.slider("Velg daglig kaloriinntak", 1200, 2500, anbefalt_kalorimål)
 
 # Kalorifordeling
 fordeling = fordel_kalorier(kalorimål)
@@ -53,7 +76,6 @@ if not df.empty:
     st.line_chart(df.set_index("Dato")["Vekt"])
     st.write(df.tail())
 
-    # Sjekk at startvekt og målvekt er gyldige
     if startvekt > målvekt:
         fremdrift, siste_vekt = beregn_fremdrift(startvekt, målvekt, df)
         st.write(f"**Siste registrerte vekt:** {siste_vekt} kg")
