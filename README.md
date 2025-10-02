@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://www.infera.no/wp-content/uploads/2025/10/slankeapp.png" alt="Slankeapp banner" width="500"/>
+</p>
+
 # Slankeapp 🍽️
 
 **Slankeapp** er en enkel, norskutviklet kaloriguide for deg som ønsker å gå ned i vekt på en realistisk og motiverende måte. Appen gir daglige måltidsforslag, fremdriftsvisning og prognose basert på personlig informasjon – helt uten innlogging eller kompleks registrering.
