@@ -1,7 +1,7 @@
 import streamlit as st
 from datetime import date
 import pandas as pd
-from måltidslogikk import generer_dagsplan, fordel_kalorier
+from måltidslogikk import generer_dagsplan, fordel_kalorier, beregn_bmr
 from supabase_klient import (
     test_tilkobling,
     registrer_vekt_db,
@@ -20,26 +20,28 @@ if "bruker_id" not in st.session_state:
     st.session_state["bruker_id"] = ""
 
 # 🧭 Innlogging
-st.title("Slankeapp 🍽️")
-st.caption("Din enkle kaloriguide for vektnedgang og vektlogg.")
+if not st.session_state["innlogget"]:
+    st.title("Slankeapp 🍽️")
+    st.caption("Din enkle kaloriguide for vektnedgang og vektlogg.")
 
-eksisterende_brukere = hent_unike_brukere()
-valgt_bruker = st.selectbox("Velg eksisterende bruker", eksisterende_brukere)
-ny_bruker = st.text_input("Eller skriv inn nytt brukernavn")
+    eksisterende_brukere = hent_unike_brukere()
+    valgt_bruker = st.selectbox("Velg eksisterende bruker", eksisterende_brukere)
+    ny_bruker = st.text_input("Eller skriv inn nytt brukernavn")
 
-if st.button("Logg inn"):
-    bruker_id = ny_bruker if ny_bruker else valgt_bruker
-    if bruker_id:
-        st.session_state["innlogget"] = True
-        st.session_state["bruker_id"] = bruker_id
-        st.success(f"✅ Logget inn som: {bruker_id}")
-    else:
-        st.warning("Skriv inn brukernavn før du logger inn.")
+    if st.button("Logg inn"):
+        bruker_id = ny_bruker if ny_bruker else valgt_bruker
+        if bruker_id:
+            st.session_state["innlogget"] = True
+            st.session_state["bruker_id"] = bruker_id
+            st.rerun()
+        else:
+            st.warning("Skriv inn brukernavn før du logger inn.")
 
 # 🧩 Hovedinnhold
 if st.session_state["innlogget"]:
     bruker_id = st.session_state["bruker_id"]
-    st.success(f"✅ Innlogget som: {bruker_id}")
+    st.title("Slankeapp 🍽️")
+    st.caption(f"✅ Innlogget som: {bruker_id}")
 
     if not test_tilkobling():
         st.error("❌ Klarte ikke å koble til Supabase")
@@ -67,9 +69,6 @@ if st.session_state["innlogget"]:
         st.success("✅ Profil lagret")
 
     # 🔢 BMR og TDEE
-    def beregn_bmr(vekt, høyde, alder, kjønn):
-        return 10 * vekt + 6.25 * høyde - 5 * alder + (5 if kjønn == "Mann" else -161)
-
     bmr = beregn_bmr(startvekt, høyde, alder, kjønn)
     tdee = bmr * 1.4
     anbefalt_kalorimål = int(tdee - 500)
