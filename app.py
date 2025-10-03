@@ -10,6 +10,12 @@ from datetime import date
 import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="Slankepp", page_icon="🍽️")
+from supabase_klient import test_tilkobling
+
+if test_tilkobling():
+    st.success("✅ Supabase-tilkobling aktiv")
+else:
+    st.error("❌ Klarte ikke å koble til Supabase")
 
 # Banner og intro
 st.image("https://www.infera.no/wp-content/uploads/2025/10/slankeapp.png", use_container_width=True)
