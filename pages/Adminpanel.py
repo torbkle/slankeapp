@@ -1,5 +1,8 @@
 import streamlit as st
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from io import BytesIO
 from supabase_klient import hent_unike_brukere, hent_vektlogg_db, hent_brukerinfo, test_tilkobling
 
 st.set_page_config(page_title="Adminpanel", page_icon="🔒")
@@ -18,46 +21,53 @@ if not test_tilkobling():
     st.stop()
 
 # 👥 Brukeroversikt
-st.write("## Brukere i systemet")
 brukere = hent_unike_brukere()
 st.write(f"Totalt antall brukere: **{len(brukere)}**")
 
 # 📊 Aggregert statistikk
-total_nedgang = 0
-aktive_brukere = 0
-fremdrift_liste = []
-
+statistikk = []
 for bruker_id in brukere:
     info = hent_brukerinfo(bruker_id)
-    if not info:
+    logg = hent_vektlogg_db(bruker_id)
+
+    if not info or not logg:
         continue
 
     startvekt = info.get("startvekt")
     målvekt = info.get("målvekt")
-    logg = hent_vektlogg_db(bruker_id)
+    if not startvekt or not målvekt or startvekt <= målvekt:
+        continue
 
-    if logg and startvekt and målvekt and startvekt > målvekt:
-        siste_vekt = logg[-1]["vekt"]
-        nedgang = startvekt - siste_vekt
-        fremdrift = round(nedgang / (startvekt - målvekt) * 100, 1)
-        total_nedgang += nedgang
-        aktive_brukere += 1
-        fremdrift_liste.append((bruker_id, fremdrift, siste_vekt))
+    siste_vekt = logg[-1]["vekt"]
+    fremdrift = round((startvekt - siste_vekt) / (startvekt - målvekt) * 100, 1)
+    statistikk.append({
+        "Bruker": bruker_id,
+        "Startvekt": startvekt,
+        "Siste vekt": siste_vekt,
+        "Målvekt": målvekt,
+        "Fremdrift (%)": fremdrift
+    })
 
-# 📈 Vis aggregert data
-if aktive_brukere > 0:
-    gjennomsnitt_nedgang = round(total_nedgang / aktive_brukere, 2)
-    st.write(f"📉 Gjennomsnittlig vektnedgang: **{gjennomsnitt_nedgang} kg**")
-    st.write(f"📈 Aktive brukere med fremdrift: **{aktive_brukere}**")
+df_stat = pd.DataFrame(statistikk)
 
+# 📈 Fremdriftstabell
+if not df_stat.empty:
     st.write("### Fremdrift per bruker")
-    for bruker_id, fremdrift, siste_vekt in fremdrift_liste:
-        st.write(f"**{bruker_id}** – Siste vekt: {siste_vekt} kg – Fremdrift: {fremdrift}%")
-        st.progress(fremdrift / 100)
-else:
-    st.info("Ingen brukere med registrert fremdrift ennå.")
+    st.dataframe(df_stat)
 
-# 🔍 Detaljvisning
+    # 🔥 Heatmap
+    st.write("### Fremdrift heatmap")
+    fig, ax = plt.subplots()
+    sns.heatmap(df_stat[["Fremdrift (%)"]].T, annot=True, cmap="YlGnBu", cbar=False, fmt=".1f")
+    st.pyplot(fig)
+
+    # 📤 CSV-eksport
+    csv = df_stat.to_csv(index=False).encode("utf-8")
+    st.download_button("📥 Last ned CSV", data=csv, file_name="fremdrift.csv", mime="text/csv")
+else:
+    st.info("Ingen brukere med registrert fremdrift.")
+
+# 🔍 Detaljvisning med dato-filter
 st.write("---")
 valgt = st.selectbox("Velg bruker for detaljvisning", brukere)
 if valgt:
@@ -65,14 +75,19 @@ if valgt:
     st.write("### Profilinformasjon")
     st.json(info)
 
-    st.write("### Vektlogg")
     data = hent_vektlogg_db(valgt)
     df = pd.DataFrame(data)
 
     if not df.empty:
         df["dato"] = pd.to_datetime(df["dato"])
         df = df.rename(columns={"dato": "Dato", "vekt": "Vekt"})
-        st.line_chart(df.set_index("Dato")["Vekt"])
-        st.write(df.tail())
+
+        # 📅 Dato-filter
+        dato_start = st.date_input("Fra dato", value=df["Dato"].min())
+        dato_slutt = st.date_input("Til dato", value=df["Dato"].max())
+        df_filtered = df[(df["Dato"] >= pd.to_datetime(dato_start)) & (df["Dato"] <= pd.to_datetime(dato_slutt))]
+
+        st.line_chart(df_filtered.set_index("Dato")["Vekt"])
+        st.write(df_filtered.tail())
     else:
         st.info("Ingen vektdata registrert for denne brukeren.")
