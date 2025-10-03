@@ -40,4 +40,4 @@ for bruker in brukere:
 if admin_data:
     st.dataframe(pd.DataFrame(admin_data))
 else:
-    st.info("Ingen brukere med fullstendig data.")
+    st.info("Ingen brukere med fullstendig data.") 
