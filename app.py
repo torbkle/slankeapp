@@ -15,7 +15,7 @@ st.set_page_config(page_title="Slankeapp", page_icon="🍽️")
 if test_tilkobling():
     st.success("✅ Supabase-tilkobling aktiv")
 else:
-    st.error("❌ Klarte ikke å koble til Supabase")
+    st.error("❌ Klarte ikke å koble til Supabase – sjekk Secrets eller tabellstruktur")
 
 # Banner og intro
 st.image("https://www.infera.no/wp-content/uploads/2025/10/slankeapp.png", use_container_width=True)
