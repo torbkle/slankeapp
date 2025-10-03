@@ -6,7 +6,9 @@ from supabase_klient import (
     test_tilkobling,
     registrer_vekt_db,
     hent_vektlogg_db,
-    hent_unike_brukere
+    hent_unike_brukere,
+    lagre_brukerinfo,
+    hent_brukerinfo
 )
 
 st.set_page_config(page_title="Slankeapp", page_icon="🍽️")
@@ -33,14 +35,28 @@ if logg_inn and bruker_id:
 
     # 🧍 Personlig informasjon
     st.write("### Personlig informasjon")
-    kjønn = st.radio("Kjønn", ["Mann", "Kvinne"])
-    alder = st.number_input("Alder", min_value=10, max_value=100, step=1)
-    høyde = st.number_input("Høyde (cm)", min_value=120.0, max_value=220.0, step=0.5)
+    info = hent_brukerinfo(bruker_id)
+    kjønn = st.radio("Kjønn", ["Mann", "Kvinne"], index=0 if not info else ["Mann", "Kvinne"].index(info["kjønn"]))
+    alder = st.number_input("Alder", min_value=10, max_value=100, step=1, value=info["alder"] if info else 30)
+    høyde = st.number_input("Høyde (cm)", min_value=120.0, max_value=220.0, step=0.5, value=info["høyde"] if info else 175.0)
 
     # 🎯 Vektmål
     st.write("### Vektmål")
-    startvekt = st.number_input("Startvekt (kg)", min_value=40.0, max_value=200.0, step=0.1)
-    målvekt = st.number_input("Målvekt (kg)", min_value=40.0, max_value=200.0, step=0.1)
+    startvekt = st.number_input("Startvekt (kg)", min_value=40.0, max_value=200.0, step=0.1, value=info["startvekt"] if info else 90.0)
+    målvekt = st.number_input("Målvekt (kg)", min_value=40.0, max_value=200.0, step=0.1, value=info["målvekt"] if info else 80.0)
+
+    # 💾 Lagre brukerinfo
+    if st.button("Oppdater profil"):
+        brukerdata = {
+            "bruker_id": bruker_id,
+            "kjønn": kjønn,
+            "alder": alder,
+            "høyde": høyde,
+            "startvekt": startvekt,
+            "målvekt": målvekt
+        }
+        lagre_brukerinfo(brukerdata)
+        st.success("✅ Profil lagret")
 
     # 🔢 BMR og TDEE
     def beregn_bmr(vekt, høyde, alder, kjønn):
@@ -49,15 +65,12 @@ if logg_inn and bruker_id:
         else:
             return 10 * vekt + 6.25 * høyde - 5 * alder - 161
 
-    if startvekt and høyde and alder:
-        bmr = beregn_bmr(startvekt, høyde, alder, kjønn)
-        tdee = bmr * 1.4
-        anbefalt_kalorimål = int(tdee - 500)
-        st.write(f"🧮 BMR: {int(bmr)} kcal/dag")
-        st.write(f"⚙️ TDEE: {int(tdee)} kcal/dag")
-        st.write(f"🎯 Anbefalt kaloriinntak: {anbefalt_kalorimål} kcal/dag")
-    else:
-        anbefalt_kalorimål = 1800
+    bmr = beregn_bmr(startvekt, høyde, alder, kjønn)
+    tdee = bmr * 1.4
+    anbefalt_kalorimål = int(tdee - 500)
+    st.write(f"🧮 BMR: {int(bmr)} kcal/dag")
+    st.write(f"⚙️ TDEE: {int(tdee)} kcal/dag")
+    st.write(f"🎯 Anbefalt kaloriinntak: {anbefalt_kalorimål} kcal/dag")
 
     # 🍽️ Kalorimål og måltidsplan
     kalorimål = st.slider("Velg daglig kaloriinntak", 1200, 2500, anbefalt_kalorimål)
@@ -82,6 +95,10 @@ if logg_inn and bruker_id:
     if st.button("Lagre vekt"):
         registrer_vekt_db(bruker_id, str(date.today()), dagens_vekt)
         st.success(f"Vekt {dagens_vekt} kg lagret for {date.today()}")
+
+    # 🔍 Testvisning av vektdata
+    st.write(f"🔍 Bruker-ID: {bruker_id}")
+    st.write(f"📦 Vektdata: {hent_vektlogg_db(bruker_id)}")
 
     data = hent_vektlogg_db(bruker_id)
     df = pd.DataFrame(data)
