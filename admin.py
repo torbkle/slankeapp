@@ -5,8 +5,15 @@ from supabase_klient import hent_unike_brukere, hent_vektlogg_db, hent_brukerinf
 st.set_page_config(page_title="Adminpanel · Slankeapp", page_icon="🛠️")
 
 st.title("🛠️ Adminpanel")
-st.caption("Oversikt over alle brukere, vektlogg og fremdrift.")
+st.caption("Kun for autoriserte brukere.")
 
+# 🔐 Enkel tilgangskontroll
+passord = st.text_input("Adminpassord", type="password")
+if passord != st.secrets.get("ADMIN_PASSORD", ""):
+    st.error("⛔ Feil passord eller mangler tilgang.")
+    st.stop()
+
+# ✅ Oversikt
 brukere = hent_unike_brukere()
 admin_data = []
 
