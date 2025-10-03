@@ -11,7 +11,7 @@ from supabase_klient import (
     hent_brukerinfo
 )
 
-st.set_page_config(page_title="Slankeapp", page_icon="🍽️")
+st.set_page_config(page_title="Slankeapp", page_icon="🍽️", layout="centered")
 
 # 🔐 Session state
 if "innlogget" not in st.session_state:
@@ -21,27 +21,31 @@ if "bruker_id" not in st.session_state:
 
 # 🧭 Innlogging
 if not st.session_state["innlogget"]:
-    st.title("Slankeapp 🍽️")
-    st.caption("Din enkle kaloriguide for vektnedgang og vektlogg.")
+    st.markdown("""
+        <div style="border:2px solid #4CAF50; padding:20px; border-radius:10px; background-color:#f9f9f9">
+        <h3 style="color:#4CAF50">🔐 Logg inn</h3>
+        <p>Velg eksisterende bruker eller opprett ny.</p>
+        </div>
+    """, unsafe_allow_html=True)
 
     eksisterende_brukere = hent_unike_brukere()
-    valgt_bruker = st.selectbox("Velg eksisterende bruker", eksisterende_brukere)
-    ny_bruker = st.text_input("Eller skriv inn nytt brukernavn")
+    valgt_bruker = st.selectbox("👤 Velg bruker", eksisterende_brukere)
+    ny_bruker = st.text_input("✍️ Ny bruker", placeholder="Skriv inn brukernavn")
 
-    if st.button("Logg inn"):
+    st.markdown("---")
+    if st.button("🚪 Logg inn"):
         bruker_id = ny_bruker if ny_bruker else valgt_bruker
         if bruker_id:
             st.session_state["innlogget"] = True
             st.session_state["bruker_id"] = bruker_id
             st.rerun()
         else:
-            st.warning("Skriv inn brukernavn før du logger inn.")
+            st.warning("⚠️ Skriv inn brukernavn før du logger inn.")
 
 # 🧩 Hovedinnhold
 if st.session_state["innlogget"]:
     bruker_id = st.session_state["bruker_id"]
-    st.title("Slankeapp 🍽️")
-    st.caption(f"✅ Innlogget som: {bruker_id}")
+    st.markdown(f"### 🍽️ Slankeapp – velkommen, **{bruker_id}**")
 
     if not test_tilkobling():
         st.error("❌ Klarte ikke å koble til Supabase")
@@ -49,15 +53,18 @@ if st.session_state["innlogget"]:
 
     info = hent_brukerinfo(bruker_id) or {}
 
-    # 🧍 Personlig info
-    st.write("### Personlig informasjon")
-    kjønn = st.radio("Kjønn", ["Mann", "Kvinne"], index=0 if info.get("kjønn") != "Kvinne" else 1)
-    alder = st.number_input("Alder", min_value=10, max_value=100, step=1, value=int(info.get("alder", 30)))
-    høyde = st.number_input("Høyde (cm)", min_value=120.0, max_value=220.0, step=0.5, value=float(info.get("høyde", 175.0)))
-    startvekt = st.number_input("Startvekt (kg)", min_value=40.0, max_value=200.0, step=0.1, value=float(info.get("startvekt", 90.0)))
-    målvekt = st.number_input("Målvekt (kg)", min_value=40.0, max_value=200.0, step=0.1, value=float(info.get("målvekt", 80.0)))
+    st.markdown("## 👤 Profil")
+    with st.container():
+        col1, col2 = st.columns(2)
+        with col1:
+            kjønn = st.radio("Kjønn", ["Mann", "Kvinne"], index=0 if info.get("kjønn") != "Kvinne" else 1)
+            alder = st.number_input("Alder", min_value=10, max_value=100, value=int(info.get("alder", 30)))
+            høyde = st.number_input("Høyde (cm)", min_value=120.0, max_value=220.0, value=float(info.get("høyde", 175.0)))
+        with col2:
+            startvekt = st.number_input("Startvekt (kg)", min_value=40.0, max_value=200.0, value=float(info.get("startvekt", 90.0)))
+            målvekt = st.number_input("Målvekt (kg)", min_value=40.0, max_value=200.0, value=float(info.get("målvekt", 80.0)))
 
-    if st.button("Oppdater profil"):
+    if st.button("💾 Lagre profil"):
         lagre_brukerinfo({
             "bruker_id": bruker_id,
             "kjønn": kjønn,
@@ -68,37 +75,34 @@ if st.session_state["innlogget"]:
         })
         st.success("✅ Profil lagret")
 
-    # 🔢 BMR og TDEE
+    st.markdown("## 🔢 Kaloriberegning")
     bmr = beregn_bmr(startvekt, høyde, alder, kjønn)
     tdee = bmr * 1.4
     anbefalt_kalorimål = int(tdee - 500)
-    st.write(f"🧮 BMR: {int(bmr)} kcal/dag")
-    st.write(f"⚙️ TDEE: {int(tdee)} kcal/dag")
-    st.write(f"🎯 Anbefalt kaloriinntak: {anbefalt_kalorimål} kcal/dag")
+    st.metric("BMR", f"{int(bmr)} kcal/dag")
+    st.metric("TDEE", f"{int(tdee)} kcal/dag")
+    st.metric("Anbefalt kaloriinntak", f"{anbefalt_kalorimål} kcal/dag")
 
-    # 🍽️ Måltidsplan
+    st.markdown("## 🍽️ Måltidsplan")
     kalorimål = st.slider("Velg daglig kaloriinntak", 1200, 2500, anbefalt_kalorimål)
     fordeling = fordel_kalorier(kalorimål)
-    st.write("### Kalorifordeling per måltid")
-    for kategori, kcal in fordeling.items():
-        st.write(f"{kategori}: {kcal} kcal")
+    st.write("### Kalorifordeling")
+    st.dataframe(pd.DataFrame.from_dict(fordeling, orient="index", columns=["kcal"]))
 
     plan, total = generer_dagsplan(kalorimål)
-    st.write("### Dagens måltidsforslag")
+    st.write("### Forslag til måltider")
     for måltid in plan:
-        st.markdown(f"**{måltid['kategori']} – {måltid['navn']}**")
-        st.write(f"{måltid['kalorier']} kcal – ca. kr {måltid['pris']}")
-        st.write(måltid["oppskrift"])
-        st.divider()
+        with st.expander(f"{måltid['kategori']} – {måltid['navn']} ({måltid['kalorier']} kcal)"):
+            st.write(f"💰 Pris: ca. kr {måltid['pris']}")
+            st.write(måltid["oppskrift"])
     st.write(f"**Totalt kalorier i dag:** {total} kcal")
 
-    # 📉 Vektlogg
-    st.write("### Vektlogg")
-    dagens_vekt = st.number_input("Registrer dagens vekt (kg)", min_value=40.0, max_value=200.0, step=0.1)
+    st.markdown("## 📉 Vektlogg")
+    dagens_vekt = st.number_input("Registrer dagens vekt (kg)", min_value=40.0, max_value=200.0)
 
-    if st.button("Lagre vekt"):
+    if st.button("📤 Lagre vekt"):
         registrer_vekt_db(bruker_id, str(date.today()), dagens_vekt)
-        st.success(f"Vekt {dagens_vekt} kg lagret for {date.today()}")
+        st.success(f"✅ Vekt {dagens_vekt} kg lagret for {date.today()}")
 
     data = hent_vektlogg_db(bruker_id)
     df = pd.DataFrame(data)
@@ -107,15 +111,14 @@ if st.session_state["innlogget"]:
         df["dato"] = pd.to_datetime(df["dato"])
         df = df.rename(columns={"dato": "Dato", "vekt": "Vekt"})
         st.line_chart(df.set_index("Dato")["Vekt"])
-        st.write(df.tail())
+        st.dataframe(df.tail())
 
         if startvekt > målvekt:
             siste_vekt = df["Vekt"].iloc[-1]
             fremdrift = round((startvekt - siste_vekt) / (startvekt - målvekt) * 100, 1)
-            st.write(f"**Siste registrerte vekt:** {siste_vekt} kg")
-            st.write(f"**Målvekt:** {målvekt} kg")
+            st.metric("Siste vekt", f"{siste_vekt} kg")
+            st.metric("Fremdrift mot mål", f"{fremdrift}%")
             st.progress(fremdrift / 100)
-            st.write(f"**Fremdrift mot mål:** {fremdrift}%")
         else:
             st.warning("Startvekten må være høyere enn målvekten for å vise fremdrift.")
     else:
