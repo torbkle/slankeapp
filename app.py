@@ -52,13 +52,13 @@ if st.session_state["innlogget"]:
     # 🧍 Personlig informasjon
     st.write("### Personlig informasjon")
     kjønn = st.radio("Kjønn", ["Mann", "Kvinne"], index=0 if info.get("kjønn") != "Kvinne" else 1)
-    alder = st.number_input("Alder", min_value=10, max_value=100, step=1, value=info.get("alder", 30))
-    høyde = st.number_input("Høyde (cm)", min_value=120.0, max_value=220.0, step=0.5, value=info.get("høyde", 175.0))
+    alder = st.number_input("Alder", min_value=10, max_value=100, step=1, value=int(info.get("alder", 30)))
+    høyde = st.number_input("Høyde (cm)", min_value=120.0, max_value=220.0, step=0.5, value=float(info.get("høyde", 175.0)))
 
     # 🎯 Vektmål
     st.write("### Vektmål")
-    startvekt = st.number_input("Startvekt (kg)", min_value=40.0, max_value=200.0, step=0.1, value=info.get("startvekt", 90.0))
-    målvekt = st.number_input("Målvekt (kg)", min_value=40.0, max_value=200.0, step=0.1, value=info.get("målvekt", 80.0))
+    startvekt = st.number_input("Startvekt (kg)", min_value=40.0, max_value=200.0, step=0.1, value=float(info.get("startvekt", 90.0)))
+    målvekt = st.number_input("Målvekt (kg)", min_value=40.0, max_value=200.0, step=0.1, value=float(info.get("målvekt", 80.0)))
 
     if st.button("Oppdater profil"):
         brukerdata = {
