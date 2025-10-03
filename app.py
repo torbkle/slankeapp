@@ -1,96 +1,88 @@
 import streamlit as st
+from datetime import date
+import pandas as pd
 from måltidslogikk import generer_dagsplan, fordel_kalorier
 from supabase_klient import (
     test_tilkobling,
     registrer_vekt_db,
-    hent_vektlogg_db
+    hent_vektlogg_db,
+    hent_unike_brukere
 )
-from datetime import date
-import pandas as pd
 
 st.set_page_config(page_title="Slankeapp", page_icon="🍽️")
 
-# Supabase-status
-if test_tilkobling():
-    st.success("✅ Supabase-tilkobling aktiv")
-else:
-    st.error("❌ Klarte ikke å koble til Supabase – sjekk Secrets eller tabellstruktur")
-
-# 🔐 Bruker-ID og oversikt
-st.write("### Innlogging 🔐")
-bruker_id_input = st.text_input("Skriv inn brukernavn eller e-post")
-eksisterende_brukere = ["torbjorn", "testbruker", "demo"]  # Kun for deg – kan hentes fra Supabase senere
-valgt_bruker = st.selectbox("Velg eksisterende bruker (valgfritt)", eksisterende_brukere)
-
-# Prioriter tekstinput hvis fylt inn
-bruker_id = bruker_id_input if bruker_id_input else valgt_bruker
-
-# Banner og intro
-st.image("https://www.infera.no/wp-content/uploads/2025/10/slankeapp.png", use_container_width=True)
-st.caption("Enkel kaloriguide som hjelper deg å gå ned i vekt, følge målet og holde budsjett.")
+# 🔐 Innlogging
 st.title("Slankeapp 🍽️")
-st.subheader("Din enkle kaloriguide")
+st.caption("Din enkle kaloriguide for vektnedgang og måltidsplanlegging.")
 
-# Personlig informasjon
-st.write("### Personlig informasjon 🧍")
-kjønn = st.radio("Kjønn", ["Mann", "Kvinne"])
-alder = st.number_input("Alder", min_value=10, max_value=100, step=1)
-høyde = st.number_input("Høyde (cm)", min_value=120.0, max_value=220.0, step=0.5)
+st.write("### Logg inn")
+eksisterende_brukere = hent_unike_brukere()
+valgt_bruker = st.selectbox("Velg eksisterende bruker", eksisterende_brukere)
+ny_bruker = st.text_input("Eller skriv inn nytt brukernavn")
+bruker_id = ny_bruker if ny_bruker else valgt_bruker
+logg_inn = st.button("Logg inn")
 
-# Vektmål
-st.write("### Vektmål 🎯")
-startvekt = st.number_input("Startvekt (kg)", min_value=40.0, max_value=200.0, step=0.1, format="%.1f")
-målvekt = st.number_input("Målvekt (kg)", min_value=40.0, max_value=200.0, step=0.1, format="%.1f")
+if logg_inn and bruker_id:
+    st.success(f"✅ Logget inn som: {bruker_id}")
 
-# Beregn BMR og TDEE
-def beregn_bmr(vekt, høyde, alder, kjønn):
-    if kjønn == "Mann":
-        return 10 * vekt + 6.25 * høyde - 5 * alder + 5
+    # 🔌 Supabase-status
+    if test_tilkobling():
+        st.success("✅ Supabase-tilkobling aktiv")
     else:
-        return 10 * vekt + 6.25 * høyde - 5 * alder - 161
+        st.error("❌ Klarte ikke å koble til Supabase – sjekk Secrets eller tabellstruktur")
 
-if startvekt and høyde and alder:
-    bmr = beregn_bmr(startvekt, høyde, alder, kjønn)
-    tdee = bmr * 1.4
-    anbefalt_kalorimål = int(tdee - 500)
-    st.write(f"🧮 Beregnet BMR: {int(bmr)} kcal/dag")
-    st.write(f"⚙️ Estimert TDEE: {int(tdee)} kcal/dag")
-    st.write(f"🎯 Anbefalt kaloriinntak for vektnedgang: {anbefalt_kalorimål} kcal/dag")
-else:
-    anbefalt_kalorimål = 1800
+    # 🧍 Personlig informasjon
+    st.write("### Personlig informasjon")
+    kjønn = st.radio("Kjønn", ["Mann", "Kvinne"])
+    alder = st.number_input("Alder", min_value=10, max_value=100, step=1)
+    høyde = st.number_input("Høyde (cm)", min_value=120.0, max_value=220.0, step=0.5)
 
-# Kalorimål
-kalorimål = st.slider("Velg daglig kaloriinntak", 1200, 2500, anbefalt_kalorimål)
+    # 🎯 Vektmål
+    st.write("### Vektmål")
+    startvekt = st.number_input("Startvekt (kg)", min_value=40.0, max_value=200.0, step=0.1)
+    målvekt = st.number_input("Målvekt (kg)", min_value=40.0, max_value=200.0, step=0.1)
 
-# Kalorifordeling
-fordeling = fordel_kalorier(kalorimål)
-st.write("### Kalorifordeling per måltid")
-for kategori, kcal in fordeling.items():
-    st.write(f"{kategori}: {kcal} kcal")
+    # 🔢 BMR og TDEE
+    def beregn_bmr(vekt, høyde, alder, kjønn):
+        if kjønn == "Mann":
+            return 10 * vekt + 6.25 * høyde - 5 * alder + 5
+        else:
+            return 10 * vekt + 6.25 * høyde - 5 * alder - 161
 
-# Måltidsplan
-plan, total = generer_dagsplan(kalorimål)
-st.write("### Dagens måltidsforslag")
-for måltid in plan:
-    st.markdown(f"**{måltid['kategori']} – {måltid['navn']}**")
-    st.write(f"{måltid['kalorier']} kcal – ca. kr {måltid['pris']}")
-    st.write(måltid["oppskrift"])
-    st.divider()
-st.write(f"**Totalt kalorier i dag:** {total} kcal")
+    if startvekt and høyde and alder:
+        bmr = beregn_bmr(startvekt, høyde, alder, kjønn)
+        tdee = bmr * 1.4
+        anbefalt_kalorimål = int(tdee - 500)
+        st.write(f"🧮 BMR: {int(bmr)} kcal/dag")
+        st.write(f"⚙️ TDEE: {int(tdee)} kcal/dag")
+        st.write(f"🎯 Anbefalt kaloriinntak: {anbefalt_kalorimål} kcal/dag")
+    else:
+        anbefalt_kalorimål = 1800
 
-# Vektlogg
-st.write("### Vektlogg 📉")
-dagens_vekt = st.number_input("Registrer dagens vekt (kg)", min_value=40.0, max_value=200.0, step=0.1)
+    # 🍽️ Kalorimål og måltidsplan
+    kalorimål = st.slider("Velg daglig kaloriinntak", 1200, 2500, anbefalt_kalorimål)
+    fordeling = fordel_kalorier(kalorimål)
+    st.write("### Kalorifordeling per måltid")
+    for kategori, kcal in fordeling.items():
+        st.write(f"{kategori}: {kcal} kcal")
 
-if st.button("Lagre vekt"):
-    if bruker_id:
+    plan, total = generer_dagsplan(kalorimål)
+    st.write("### Dagens måltidsforslag")
+    for måltid in plan:
+        st.markdown(f"**{måltid['kategori']} – {måltid['navn']}**")
+        st.write(f"{måltid['kalorier']} kcal – ca. kr {måltid['pris']}")
+        st.write(måltid["oppskrift"])
+        st.divider()
+    st.write(f"**Totalt kalorier i dag:** {total} kcal")
+
+    # 📉 Vektlogg
+    st.write("### Vektlogg")
+    dagens_vekt = st.number_input("Registrer dagens vekt (kg)", min_value=40.0, max_value=200.0, step=0.1)
+
+    if st.button("Lagre vekt"):
         registrer_vekt_db(bruker_id, str(date.today()), dagens_vekt)
-        st.success(f"Vekt {dagens_vekt} kg lagret for {date.today()} (bruker: {bruker_id})")
-    else:
-        st.warning("Du må skrive inn brukernavn før du kan lagre vekt.")
+        st.success(f"Vekt {dagens_vekt} kg lagret for {date.today()}")
 
-# Vis vektlogg
-if bruker_id:
     data = hent_vektlogg_db(bruker_id)
     df = pd.DataFrame(data)
 
@@ -108,8 +100,32 @@ if bruker_id:
             st.progress(fremdrift / 100)
             st.write(f"**Fremdrift mot mål:** {fremdrift}%")
         else:
-            st.warning("Startvekten må være høyere enn målvekten for å vise fremdrift og prognose.")
+            st.warning("Startvekten må være høyere enn målvekten for å vise fremdrift.")
     else:
         st.info("Ingen vektdata registrert ennå.")
+
+    # 📊 Mini-dashboard
+    st.write("### 📊 Fremdrift for alle brukere")
+    total_fremdrift = 0
+    gyldige_brukere = 0
+
+    for bruker in eksisterende_brukere:
+        logg = hent_vektlogg_db(bruker)
+        if logg:
+            df_bruker = pd.DataFrame(logg)
+            if "vekt" in df_bruker.columns and len(df_bruker) > 1:
+                start = df_bruker["vekt"].iloc[0]
+                slutt = df_bruker["vekt"].iloc[-1]
+                if start > slutt:
+                    fremdrift = (start - slutt) / start * 100
+                    total_fremdrift += fremdrift
+                    gyldige_brukere += 1
+
+    if gyldige_brukere > 0:
+        gjennomsnitt = round(total_fremdrift / gyldige_brukere, 1)
+        st.metric("Gjennomsnittlig fremdrift", f"{gjennomsnitt}%")
+    else:
+        st.info("Ingen brukere med gyldig fremdrift registrert ennå.")
+
 else:
-    st.info("Skriv inn brukernavn for å vise din vektlogg.")
+    st.info("Skriv inn brukernavn og trykk 'Logg inn' for å starte.")
