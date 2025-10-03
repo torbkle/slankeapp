@@ -10,8 +10,12 @@ from supabase_klient import (
     lagre_brukerinfo,
     hent_brukerinfo
 )
+from style import css, ramme, seksjon, ikonlinje
+from branding import vis_logo, INFERA_GRØNN
 
-st.set_page_config(page_title="Slankeapp", page_icon="🍽️", layout="centered")
+st.set_page_config(page_title="Slankeapp", page_icon="🥗", layout="centered")
+css()
+vis_logo()
 
 # 🔐 Session state
 if "innlogget" not in st.session_state:
@@ -21,18 +25,11 @@ if "bruker_id" not in st.session_state:
 
 # 🧭 Innlogging
 if not st.session_state["innlogget"]:
-    st.markdown("""
-        <div style="border:2px solid #4CAF50; padding:20px; border-radius:10px; background-color:#f9f9f9">
-        <h3 style="color:#4CAF50">🔐 Logg inn</h3>
-        <p>Velg eksisterende bruker eller opprett ny.</p>
-        </div>
-    """, unsafe_allow_html=True)
-
+    ramme("🔐 Logg inn", "Velg eksisterende bruker eller opprett ny.")
     eksisterende_brukere = hent_unike_brukere()
     valgt_bruker = st.selectbox("👤 Velg bruker", eksisterende_brukere)
     ny_bruker = st.text_input("✍️ Ny bruker", placeholder="Skriv inn brukernavn")
 
-    st.markdown("---")
     if st.button("🚪 Logg inn"):
         bruker_id = ny_bruker if ny_bruker else valgt_bruker
         if bruker_id:
@@ -45,7 +42,7 @@ if not st.session_state["innlogget"]:
 # 🧩 Hovedinnhold
 if st.session_state["innlogget"]:
     bruker_id = st.session_state["bruker_id"]
-    st.markdown(f"### 🍽️ Slankeapp – velkommen, **{bruker_id}**")
+    seksjon(f"🍽️ Slankeapp – velkommen, {bruker_id}")
 
     if not test_tilkobling():
         st.error("❌ Klarte ikke å koble til Supabase")
@@ -53,7 +50,7 @@ if st.session_state["innlogget"]:
 
     info = hent_brukerinfo(bruker_id) or {}
 
-    st.markdown("## 👤 Profil")
+    seksjon("👤 Profil")
     with st.container():
         col1, col2 = st.columns(2)
         with col1:
@@ -73,9 +70,9 @@ if st.session_state["innlogget"]:
             "startvekt": startvekt,
             "målvekt": målvekt
         })
-        st.success("✅ Profil lagret")
+        ikonlinje("Profil lagret")
 
-    st.markdown("## 🔢 Kaloriberegning")
+    seksjon("🔢 Kaloriberegning")
     bmr = beregn_bmr(startvekt, høyde, alder, kjønn)
     tdee = bmr * 1.4
     anbefalt_kalorimål = int(tdee - 500)
@@ -83,26 +80,24 @@ if st.session_state["innlogget"]:
     st.metric("TDEE", f"{int(tdee)} kcal/dag")
     st.metric("Anbefalt kaloriinntak", f"{anbefalt_kalorimål} kcal/dag")
 
-    st.markdown("## 🍽️ Måltidsplan")
+    seksjon("🍽️ Måltidsplan")
     kalorimål = st.slider("Velg daglig kaloriinntak", 1200, 2500, anbefalt_kalorimål)
     fordeling = fordel_kalorier(kalorimål)
-    st.write("### Kalorifordeling")
     st.dataframe(pd.DataFrame.from_dict(fordeling, orient="index", columns=["kcal"]))
 
     plan, total = generer_dagsplan(kalorimål)
-    st.write("### Forslag til måltider")
     for måltid in plan:
         with st.expander(f"{måltid['kategori']} – {måltid['navn']} ({måltid['kalorier']} kcal)"):
             st.write(f"💰 Pris: ca. kr {måltid['pris']}")
             st.write(måltid["oppskrift"])
     st.write(f"**Totalt kalorier i dag:** {total} kcal")
 
-    st.markdown("## 📉 Vektlogg")
+    seksjon("📉 Vektlogg")
     dagens_vekt = st.number_input("Registrer dagens vekt (kg)", min_value=40.0, max_value=200.0)
 
     if st.button("📤 Lagre vekt"):
         registrer_vekt_db(bruker_id, str(date.today()), dagens_vekt)
-        st.success(f"✅ Vekt {dagens_vekt} kg lagret for {date.today()}")
+        ikonlinje(f"Vekt {dagens_vekt} kg lagret for {date.today()}")
 
     data = hent_vektlogg_db(bruker_id)
     df = pd.DataFrame(data)
