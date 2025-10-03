@@ -13,15 +13,15 @@ from supabase_klient import (
 
 st.set_page_config(page_title="Slankeapp", page_icon="🍽️")
 
-# 🔐 Session state for innlogging
+# 🔐 Session state
 if "innlogget" not in st.session_state:
     st.session_state["innlogget"] = False
 if "bruker_id" not in st.session_state:
     st.session_state["bruker_id"] = ""
 
-# 🧭 Innloggingsseksjon
+# 🧭 Innlogging
 st.title("Slankeapp 🍽️")
-st.caption("Din enkle kaloriguide for vektnedgang og måltidsplanlegging.")
+st.caption("Din enkle kaloriguide for vektnedgang og vektlogg.")
 
 eksisterende_brukere = hent_unike_brukere()
 valgt_bruker = st.selectbox("Velg eksisterende bruker", eksisterende_brukere)
@@ -46,30 +46,25 @@ if st.session_state["innlogget"]:
     else:
         st.error("❌ Klarte ikke å koble til Supabase")
 
-    # Hent eksisterende brukerdata
     info = hent_brukerinfo(bruker_id) or {}
 
-    # 🧍 Personlig informasjon
+    # 🧍 Personlig info
     st.write("### Personlig informasjon")
     kjønn = st.radio("Kjønn", ["Mann", "Kvinne"], index=0 if info.get("kjønn") != "Kvinne" else 1)
     alder = st.number_input("Alder", min_value=10, max_value=100, step=1, value=int(info.get("alder", 30)))
     høyde = st.number_input("Høyde (cm)", min_value=120.0, max_value=220.0, step=0.5, value=float(info.get("høyde", 175.0)))
-
-    # 🎯 Vektmål
-    st.write("### Vektmål")
     startvekt = st.number_input("Startvekt (kg)", min_value=40.0, max_value=200.0, step=0.1, value=float(info.get("startvekt", 90.0)))
     målvekt = st.number_input("Målvekt (kg)", min_value=40.0, max_value=200.0, step=0.1, value=float(info.get("målvekt", 80.0)))
 
     if st.button("Oppdater profil"):
-        brukerdata = {
+        lagre_brukerinfo({
             "bruker_id": bruker_id,
             "kjønn": kjønn,
             "alder": alder,
             "høyde": høyde,
             "startvekt": startvekt,
             "målvekt": målvekt
-        }
-        lagre_brukerinfo(brukerdata)
+        })
         st.success("✅ Profil lagret")
 
     # 🔢 BMR og TDEE
@@ -106,9 +101,6 @@ if st.session_state["innlogget"]:
     if st.button("Lagre vekt"):
         registrer_vekt_db(bruker_id, str(date.today()), dagens_vekt)
         st.success(f"Vekt {dagens_vekt} kg lagret for {date.today()}")
-
-    st.write(f"🔍 Bruker-ID: {bruker_id}")
-    st.write(f"📦 Vektdata: {hent_vektlogg_db(bruker_id)}")
 
     data = hent_vektlogg_db(bruker_id)
     df = pd.DataFrame(data)
@@ -154,5 +146,43 @@ if st.session_state["innlogget"]:
     else:
         st.info("Ingen brukere med gyldig fremdrift registrert ennå.")
 
-else:
-    st.info("Skriv inn brukernavn og trykk 'Logg inn' for å starte.")
+    # 🛠️ Adminvisning
+    st.write("### 🛠️ Adminoversikt")
+    admin_data = []
+
+    for bruker in eksisterende_brukere:
+        logg = hent_vektlogg_db(bruker)
+        info = hent_brukerinfo(bruker)
+        if logg and info:
+            df_bruker = pd.DataFrame(logg)
+            if len(df_bruker) > 0:
+                siste_vekt = df_bruker["vekt"].iloc[-1]
+                startvekt = info.get("startvekt", 0)
+                målvekt = info.get("målvekt", 0)
+    # 🛠️ Adminoversikt
+    st.write("### 🛠️ Adminoversikt")
+    admin_data = []
+
+    for bruker in eksisterende_brukere:
+        logg = hent_vektlogg_db(bruker)
+        info = hent_brukerinfo(bruker)
+        if logg and info:
+            df_bruker = pd.DataFrame(logg)
+            if len(df_bruker) > 0:
+                siste_vekt = df_bruker["vekt"].iloc[-1]
+                startvekt = float(info.get("startvekt", 0))
+                målvekt = float(info.get("målvekt", 0))
+                fremdrift = round((startvekt - siste_vekt) / (startvekt - målvekt) * 100, 1) if startvekt > målvekt else 0
+                admin_data.append({
+                    "Bruker": bruker,
+                    "Siste vekt": siste_vekt,
+                    "Startvekt": startvekt,
+                    "Målvekt": målvekt,
+                    "Fremdrift (%)": fremdrift
+                })
+    
+    if admin_data:
+        st.dataframe(pd.DataFrame(admin_data))
+    else:
+        st.info("Ingen brukere med fullstendig data.")
+
