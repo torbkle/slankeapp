@@ -80,11 +80,21 @@ if st.session_state["innlogget"]:
     st.metric("TDEE", f"{int(tdee)} kcal/dag")
     st.metric("Anbefalt kaloriinntak", f"{anbefalt_kalorimål} kcal/dag")
 
+    seksjon("🍽️ Måltidsplan")
+    kalorimål = st.slider("Velg daglig kaloriinntak", 1200, 2500, anbefalt_kalorimål)
+    fordeling = fordel_kalorier(kalorimål)
+    st.dataframe(pd.DataFrame.from_dict(fordeling, orient="index", columns=["kcal"]))
+    
+    plan, total = generer_dagsplan(kalorimål)
+    
     for måltid in plan:
-    with st.expander(f"{måltid['kategori']} – {måltid['navn']} ({måltid['kalorier']} kcal)"):
-        st.image(måltid["bilde_url"], use_column_width=True)
-        st.write(f"💰 Pris: ca. kr {round(måltid['kalorier'] * 0.02, 1)}")
-        st.write(måltid["oppskrift"])
+        with st.expander(f"{måltid['kategori']} – {måltid['navn']} ({måltid['kalorier']} kcal)"):
+            st.image(måltid["bilde_url"], use_column_width=True)
+            st.write(f"💰 Pris: ca. kr {round(måltid['kalorier'] * 0.02, 1)}")
+            st.write(måltid["oppskrift"])
+    
+    st.write(f"**Totalt kalorier i dag:** {total} kcal")
+
 
 
     seksjon("📉 Vektlogg")
