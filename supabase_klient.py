@@ -17,3 +17,10 @@ def registrer_vekt_db(bruker_id, dato, vekt):
 def hent_vektlogg_db(bruker_id):
     response = supabase.table("vektlogg").select("*").eq("bruker_id", bruker_id).order("dato").execute()
     return response.data
+def test_tilkobling():
+    try:
+        response = supabase.table("vektlogg").select("*").limit(1).execute()
+        return True
+    except Exception as e:
+        print("Supabase-feil:", e)
+        return False
