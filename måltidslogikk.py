@@ -11,20 +11,18 @@ def fordel_kalorier(kalorimål):
         "Kveldsmat": int(kalorimål * 0.10)
     }
 
+from oppskrift_api import generer_oppskrift
+
 def generer_dagsplan(kalorimål):
     fordeling = fordel_kalorier(kalorimål)
     plan = []
     total = 0
 
     for kategori, kcal in fordeling.items():
-        måltid = {
-            "kategori": kategori,
-            "navn": random.choice(["Havregrøt", "Kyllingsalat", "Laks med grønnsaker", "Wrap med tunfisk"]),
-            "kalorier": kcal,
-            "pris": round(kcal * 0.02, 1),
-            "oppskrift": f"En enkel oppskrift for {kategori} med ca. {kcal} kcal."
-        }
-        plan.append(måltid)
-        total += kcal
+        oppskrift = generer_oppskrift(kategori, kcal)
+        oppskrift["kategori"] = kategori
+        plan.append(oppskrift)
+        total += oppskrift["kalorier"]
 
     return plan, total
+
