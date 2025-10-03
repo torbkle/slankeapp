@@ -41,10 +41,9 @@ if st.session_state["innlogget"]:
     bruker_id = st.session_state["bruker_id"]
     st.success(f"✅ Innlogget som: {bruker_id}")
 
-    if test_tilkobling():
-        st.success("✅ Supabase-tilkobling aktiv")
-    else:
+    if not test_tilkobling():
         st.error("❌ Klarte ikke å koble til Supabase")
+        st.stop()
 
     info = hent_brukerinfo(bruker_id) or {}
 
@@ -122,67 +121,3 @@ if st.session_state["innlogget"]:
             st.warning("Startvekten må være høyere enn målvekten for å vise fremdrift.")
     else:
         st.info("Ingen vektdata registrert ennå.")
-
-    # 📊 Mini-dashboard
-    st.write("### 📊 Fremdrift for alle brukere")
-    total_fremdrift = 0
-    gyldige_brukere = 0
-
-    for bruker in eksisterende_brukere:
-        logg = hent_vektlogg_db(bruker)
-        if logg:
-            df_bruker = pd.DataFrame(logg)
-            if "vekt" in df_bruker.columns and len(df_bruker) > 1:
-                start = df_bruker["vekt"].iloc[0]
-                slutt = df_bruker["vekt"].iloc[-1]
-                if start > slutt:
-                    fremdrift = (start - slutt) / start * 100
-                    total_fremdrift += fremdrift
-                    gyldige_brukere += 1
-
-    if gyldige_brukere > 0:
-        gjennomsnitt = round(total_fremdrift / gyldige_brukere, 1)
-        st.metric("Gjennomsnittlig fremdrift", f"{gjennomsnitt}%")
-    else:
-        st.info("Ingen brukere med gyldig fremdrift registrert ennå.")
-
-    # 🛠️ Adminvisning
-    st.write("### 🛠️ Adminoversikt")
-    admin_data = []
-
-    for bruker in eksisterende_brukere:
-        logg = hent_vektlogg_db(bruker)
-        info = hent_brukerinfo(bruker)
-        if logg and info:
-            df_bruker = pd.DataFrame(logg)
-            if len(df_bruker) > 0:
-                siste_vekt = df_bruker["vekt"].iloc[-1]
-                startvekt = info.get("startvekt", 0)
-                målvekt = info.get("målvekt", 0)
-    # 🛠️ Adminoversikt
-    st.write("### 🛠️ Adminoversikt")
-    admin_data = []
-
-    for bruker in eksisterende_brukere:
-        logg = hent_vektlogg_db(bruker)
-        info = hent_brukerinfo(bruker)
-        if logg and info:
-            df_bruker = pd.DataFrame(logg)
-            if len(df_bruker) > 0:
-                siste_vekt = df_bruker["vekt"].iloc[-1]
-                startvekt = float(info.get("startvekt", 0))
-                målvekt = float(info.get("målvekt", 0))
-                fremdrift = round((startvekt - siste_vekt) / (startvekt - målvekt) * 100, 1) if startvekt > målvekt else 0
-                admin_data.append({
-                    "Bruker": bruker,
-                    "Siste vekt": siste_vekt,
-                    "Startvekt": startvekt,
-                    "Målvekt": målvekt,
-                    "Fremdrift (%)": fremdrift
-                })
-    
-    if admin_data:
-        st.dataframe(pd.DataFrame(admin_data))
-    else:
-        st.info("Ingen brukere med fullstendig data.")
-
