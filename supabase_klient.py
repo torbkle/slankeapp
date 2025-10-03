@@ -35,3 +35,9 @@ def hent_unike_brukere():
         print("Feil ved henting av brukere:", e)
         return []
 
+def lagre_brukerinfo(data):
+    supabase.table("brukerinfo").upsert(data).execute()
+
+def hent_brukerinfo(bruker_id):
+    response = supabase.table("brukerinfo").select("*").eq("bruker_id", bruker_id).execute()
+    return response.data[0] if response.data else None
