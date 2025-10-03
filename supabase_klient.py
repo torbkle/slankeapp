@@ -26,3 +26,11 @@ def test_tilkobling():
     except Exception as e:
         print("Supabase-feil:", e)
         return False
+def hent_unike_brukere():
+    try:
+        response = supabase.table("vektlogg").select("bruker_id").execute()
+        alle = [rad["bruker_id"] for rad in response.data if "bruker_id" in rad]
+        return sorted(list(set(alle)))
+    except Exception as e:
+        print("Feil ved henting av brukere:", e)
+        return []
