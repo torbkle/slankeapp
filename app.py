@@ -113,4 +113,3 @@ if bruker_id:
         st.info("Ingen vektdata registrert ennå.")
 else:
     st.info("Skriv inn brukernavn for å vise din vektlogg.")
-    
