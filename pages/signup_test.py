@@ -30,7 +30,7 @@ if st.button("Opprett bruker"):
         st.stop()
 
     try:
-        # 🔐 Registrer bruker via Supabase Auth
+        # 🔐 Registrer bruker
         auth_response = supabase.auth.sign_up({"email": email, "password": password})
         user = auth_response.user
 
@@ -38,13 +38,22 @@ if st.button("Opprett bruker"):
             st.error("🚫 Registrering feilet – ingen bruker returnert.")
             st.stop()
 
-        uid = user.id  # Dette er auth.uid()
+        uid = user.id
         st.success(f"✅ Registrert! Din auth.uid() er:\n`{uid}`")
+
+        # 🔐 Logg inn for å aktivere authenticated session
+        supabase.auth.sign_in_with_password({"email": email, "password": password})
+
+        # 🔍 Bekreft aktiv sesjon
+        session_check = supabase.auth.get_user()
+        if not session_check.user:
+            st.error("🚫 Du er ikke aktivt innlogget – RLS vil blokkere deg.")
+            st.stop()
 
         # 📥 Lagre brukerprofil i tabellen "brukere"
         st.info("Lagrer brukerprofil i `brukere`...")
         profile = {
-            "id": uid,  # Må matche auth.uid() for RLS
+            "id": uid,
             "email": email,
             "fornavn": fornavn,
             "etternavn": etternavn,
