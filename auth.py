@@ -1,6 +1,6 @@
+# auth.py
 import streamlit as st
 from supabase_klient import supabase
-from supabase import create_client
 
 def signup_form():
     st.sidebar.header("🆕 Opprett konto")
@@ -40,7 +40,6 @@ def login_form():
             st.session_state["bruker_id"] = uid
             st.session_state["email"] = email
 
-            # Hent profil
             profile = supabase.table("brukere").select("fornavn, rolle").eq("id", uid).execute().data[0]
             st.session_state["navn"] = profile["fornavn"]
             st.session_state["rolle"] = profile.get("rolle", "bruker")
