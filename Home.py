@@ -6,9 +6,14 @@ from supabase_klient import supabase
 from maltidslogikk import vis_maltider, registrer_maltid
 from oppskrift_api import hent_oppskrifter
 from branding import vis_logo, vis_footer
-from auth import login, krever_innlogging
-login()
+
+from auth import login_form, registrer_ny_bruker, logg_ut_knapp, krever_innlogging
+
+login_form()
+registrer_ny_bruker()
+logg_ut_knapp()
 krever_innlogging()
+
 
 st.set_page_config(page_title="Slankeapp", layout="centered")
 
