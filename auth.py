@@ -13,11 +13,14 @@ def login_form():
                 .eq("email", email)\
                 .eq("passord", password)\
                 .execute()
+
             if response.data:
+                bruker = response.data[0]
                 st.session_state["innlogget"] = True
-                st.session_state["bruker_id"] = response.data[0]["id"]
-                st.session_state["navn"] = response.data[0]["fornavn"]
-                st.success(f"✅ Velkommen, {response.data[0]['fornavn']}!")
+                st.session_state["bruker_id"] = bruker["id"]
+                st.session_state["navn"] = bruker["fornavn"]
+                st.session_state["email"] = email
+                st.success(f"✅ Velkommen, {bruker['fornavn']}!")
             else:
                 st.error("Feil e-post eller passord.")
         except Exception as e:
@@ -31,4 +34,34 @@ def registrer_ny_bruker():
     email = st.sidebar.text_input("E-postadresse")
     passord = st.sidebar.text_input("Velg passord", type="password")
 
-    if st.sidebar.button("Registr
+    if st.sidebar.button("Registrer"):
+        if not (fornavn and etternavn and email and passord):
+            st.error("Alle felt må fylles ut.")
+            return
+        try:
+            # Sjekk om e-post allerede finnes
+            eksisterende = supabase.table("brukere").select("id").eq("email", email).execute()
+            if eksisterende.data:
+                st.warning("E-postadressen er allerede registrert.")
+                return
+
+            supabase.table("brukere").insert({
+                "fornavn": fornavn,
+                "etternavn": etternavn,
+                "alder": alder,
+                "email": email,
+                "passord": passord
+            }).execute()
+            st.success("✅ Bruker opprettet! Du kan nå logge inn.")
+        except Exception as e:
+            st.error(f"Feil ved registrering: {e}")
+
+def logg_ut_knapp():
+    if st.sidebar.button("Logg ut"):
+        st.session_state.clear()
+        st.success("Du er logget ut.")
+
+def krever_innlogging():
+    if "innlogget" not in st.session_state or not st.session_state["innlogget"]:
+        st.warning("Du må logge inn for å bruke appen.")
+        st.stop()
