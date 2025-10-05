@@ -4,7 +4,6 @@ from supabase_klient import supabase
 st.set_page_config(page_title="Policy Manager", layout="wide")
 st.title("🔐 Policy Manager – RLS-kontroll")
 
-# 📋 Tabeller du vil administrere
 tabeller = ["brukere", "vektlogg", "måltider"]
 valgt_tabell = st.selectbox("Velg tabell", tabeller)
 
@@ -56,6 +55,31 @@ def opprett_standard_policy(tabell):
         """
     supabase.rpc("execute_sql", {"sql": sql})
 
+# ✅ Test om auth.uid() matcher id/bruker_id
+def test_policy(tabell):
+    try:
+        user = supabase.auth.get_user().user
+        uid = user.id
+        st.success(f"Du er innlogget som `{uid}`")
+
+        test_data = {
+            "brukere": {"id": uid, "email": "test@policy.no", "fornavn": "Test", "etternavn": "Bruker", "alder": 99, "rolle": "debug"},
+            "vektlogg": {"bruker_id": uid, "dato": "2025-10-05", "vekt": 88.8},
+            "måltider": {"bruker_id": uid, "tidspunkt": "2025-10-05T12:00:00", "beskrivelse": "Testmåltid"}
+        }
+
+        response = supabase.table(tabell).insert(test_data[tabell]).execute()
+
+        if response.status_code == 201:
+            st.success("✅ RLS-policyen godtar innsetting.")
+        else:
+            st.error("🚫 RLS-policyen blokkerer innsetting.")
+            st.code(response.json(), language="json")
+
+    except Exception as e:
+        st.error("🚫 Ikke innlogget eller feil ved test.")
+        st.code(str(e), language="json")
+
 # 📋 Vis policyer
 policyer = hent_policyer(valgt_tabell)
 st.subheader(f"📋 Policyer for `{valgt_tabell}`")
@@ -64,7 +88,8 @@ if not policyer:
     st.warning("Ingen policyer funnet.")
 else:
     for p in policyer:
-        st.markdown(f"**{p['policyname']}** – `{p['cmd']}` for `{p['roles']}`")
+        status = "✅" if "auth.uid()" in (p["qual"] or "") + (p["check"] or "") else "⚠️"
+        st.markdown(f"{status} **{p['policyname']}** – `{p['cmd']}` for `{p['roles']}`")
         st.code(f"USING: {p['qual']}\nWITH CHECK: {p['check']}")
         if st.button(f"🗑️ Slett '{p['policyname']}'", key=p['policyname']):
             slett_policy(valgt_tabell, p['policyname'])
@@ -76,3 +101,8 @@ if st.button(f"➕ Opprett anbefalte policyer for `{valgt_tabell}`"):
     opprett_standard_policy(valgt_tabell)
     st.success("✅ Policyer opprettet.")
     st.rerun()
+
+# 🚦 Test policy
+st.divider()
+if st.button(f"🚦 Test RLS-policy for `{valgt_tabell}`"):
+    test_policy(valgt_tabell)
