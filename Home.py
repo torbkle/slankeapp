@@ -1,7 +1,8 @@
 import streamlit as st
 from datetime import date
 from branding import vis_logo, vis_footer
-from auth import login_form, registrer_ny_bruker, logg_ut_knapp, krever_innlogging
+from auth import login_form, signup_form, logg_ut_knapp, krever_innlogging
+
 from maltidslogikk import vis_maltider, registrer_maltid
 from oppskrift_api import hent_oppskrifter
 from supabase_klient import supabase
