@@ -3,7 +3,7 @@ from datetime import date
 from supabase_klient import supabase
 
 # Importer moduler
-from maltidslogikk import vis_måltider, registrer_måltid
+from maltidslogikk import vis_maltider, registrer_maltid
 from oppskrift_api import hent_oppskrifter
 from branding import vis_logo, vis_footer
 
@@ -74,10 +74,10 @@ else:
 
 # Seksjon: Måltider
 st.subheader("🍽️ Dine måltider i dag")
-vis_måltider(bruker_id)
+vis_maltider(bruker_id)
 
 st.subheader("➕ Registrer nytt måltid")
-registrer_måltid(bruker_id)
+registrer_maltid(bruker_id)
 
 # Seksjon: Oppskrifter
 st.subheader("📸 Oppskriftsforslag")
