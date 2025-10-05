@@ -53,7 +53,13 @@ def opprett_standard_policy(tabell):
         FOR UPDATE TO authenticated
         USING (auth.uid() = bruker_id);
         """
-    supabase.rpc("execute_sql", {"sql": sql})
+    supabase.rpc("execute_sql_with_audit", {
+    "sql": sql,
+    "tabell": valgt_tabell,
+    "policy_navn": "Tillat registrering av ny bruker",
+    "handling": "opprettet"
+})
+
 
 # ✅ Test om auth.uid() matcher id/bruker_id
 def test_policy(tabell):
