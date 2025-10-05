@@ -9,9 +9,10 @@ from supabase_klient import supabase
 
 # Autentisering
 login_form()
-registrer_ny_bruker()
+signup_form()
 logg_ut_knapp()
 krever_innlogging()
+
 
 # Konfigurasjon
 st.set_page_config(page_title="Slankeapp", layout="centered")
