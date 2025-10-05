@@ -9,7 +9,7 @@ def login_form():
     if st.sidebar.button("Logg inn"):
         try:
             response = supabase.table("brukere")\
-                .select("id, fornavn, etternavn")\
+                .select("id, fornavn, etternavn, rolle")\
                 .eq("email", email)\
                 .eq("passord", password)\
                 .execute()
@@ -20,6 +20,7 @@ def login_form():
                 st.session_state["bruker_id"] = bruker["id"]
                 st.session_state["navn"] = bruker["fornavn"]
                 st.session_state["email"] = email
+                st.session_state["rolle"] = bruker.get("rolle", "bruker")
                 st.success(f"✅ Velkommen, {bruker['fornavn']}!")
             else:
                 st.error("Feil e-post eller passord.")
@@ -39,18 +40,18 @@ def registrer_ny_bruker():
             st.error("Alle felt må fylles ut.")
             return
         try:
-            # Sjekk om e-post allerede finnes
             eksisterende = supabase.table("brukere").select("id").eq("email", email).execute()
             if eksisterende.data:
                 st.warning("E-postadressen er allerede registrert.")
                 return
 
             supabase.table("brukere").insert({
-                "fornavn": fornavn,
-                "etternavn": etternavn,
-                "alder": alder,
-                "email": email,
-                "passord": passord
+                "fornavn": fornavn.strip(),
+                "etternavn": etternavn.strip(),
+                "alder": int(alder),
+                "email": email.strip().lower(),
+                "passord": passord,
+                "rolle": "bruker"
             }).execute()
             st.success("✅ Bruker opprettet! Du kan nå logge inn.")
         except Exception as e:
@@ -65,3 +66,6 @@ def krever_innlogging():
     if "innlogget" not in st.session_state or not st.session_state["innlogget"]:
         st.warning("Du må logge inn for å bruke appen.")
         st.stop()
+
+def er_admin():
+    return st.session_state.get("rolle") == "admin"
