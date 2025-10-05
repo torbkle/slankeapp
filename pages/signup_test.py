@@ -4,31 +4,39 @@ from supabase_klient import supabase
 st.set_page_config(page_title="Testregistrering", layout="centered")
 st.title("🧪 Testregistrering – Slankeapp")
 
-# 1. Registrer testbruker
-st.subheader("📧 Opprett testbruker")
+# 📧 Registreringsskjema
+st.subheader("Opprett testbruker")
 email = st.text_input("E-post", value="test@slankeapp.no")
 password = st.text_input("Passord", value="Test1234!", type="password")
 
 if st.button("Registrer testbruker"):
     try:
+        # 🔐 Registrer bruker via Supabase Auth
         auth_response = supabase.auth.sign_up({"email": email, "password": password})
-        uid = auth_response.user.id
+        user = auth_response.user
+        uid = user.id
         st.success(f"✅ Registrert! Din auth.uid() er:\n`{uid}`")
 
-        # 2. Lagre brukerprofil
-        st.info("📥 Lagrer brukerprofil i `brukere`...")
-        response = supabase.table("brukere").insert({
-            "id": uid,
+        # 📥 Lagre brukerprofil i tabellen "brukere"
+        st.info("Lagrer brukerprofil i `brukere`...")
+        profile = {
+            "id": uid,  # Må matche auth.uid() for RLS
             "email": email,
             "fornavn": "Test",
             "etternavn": "Bruker",
             "alder": 99,
             "rolle": "debug"
-        }).execute()
+        }
+
+        response = supabase.table("brukere").insert(profile).execute()
 
         if response.status_code == 201:
             st.success("✅ Brukerprofil lagret! RLS-policyen fungerer.")
+            st.json(profile)
         else:
-            st.error(f"🚫 Feil ved lagring: {response}")
+            st.error("🚫 Feil ved lagring. Sjekk RLS-policyen og datatyper.")
+            st.code(str(response), language="json")
+
     except Exception as e:
-        st.error(f"🚫 Feil ved registrering:\n\n{e}")
+        st.error("🚫 Feil ved registrering.")
+        st.code(str(e), language="json")
