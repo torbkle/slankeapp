@@ -3,7 +3,7 @@ from datetime import date
 from supabase_klient import supabase
 
 # Importer moduler
-from måltidslogikk import vis_måltider, registrer_måltid
+from maltidslogikk import vis_måltider, registrer_måltid
 from oppskrift_api import hent_oppskrifter
 from branding import vis_logo, vis_footer
 
