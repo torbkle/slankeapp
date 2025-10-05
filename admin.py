@@ -1,43 +1,45 @@
 import streamlit as st
-import pandas as pd
-from supabase_klient import hent_unike_brukere, hent_vektlogg_db, hent_brukerinfo
+from supabase_klient import supabase
+from branding import vis_logo, vis_footer
+from auth import krever_innlogging
 
-st.set_page_config(page_title="Adminpanel · Slankeapp", page_icon="🛠️")
+krever_innlogging()
+st.set_page_config(page_title="Adminpanel", layout="wide")
+vis_logo()
+st.title("🛠️ Adminpanel – Slankeapp")
 
-st.title("🛠️ Adminpanel")
-st.caption("Kun for autoriserte brukere.")
+# Sjekk om bruker er admin
+admin_email = "torbjorn@infera.no"
+if st.session_state.get("innlogget") and st.session_state.get("bruker_id"):
+    if st.session_state.get("navn") != "Torbjørn":
+        st.warning("Du har ikke tilgang til adminpanelet.")
+        st.stop()
 
-# 🔐 Enkel tilgangskontroll
-passord = st.text_input("Adminpassord", type="password")
-if passord != st.secrets.get("ADMIN_PASSORD", ""):
-    st.error("⛔ Feil passord eller mangler tilgang.")
-    st.stop()
+# Brukeroversikt
+st.subheader("👥 Registrerte brukere")
+try:
+    brukere = supabase.table("brukere").select("fornavn, etternavn, alder, email").execute().data
+    for b in brukere:
+        st.markdown(f"- **{b['fornavn']} {b['etternavn']}** ({b['alder']} år) – {b['email']}")
+except Exception as e:
+    st.error(f"Feil ved henting av brukere: {e}")
 
-# ✅ Oversikt
-brukere = hent_unike_brukere()
-admin_data = []
+# Vektlogg
+st.subheader("📊 Vektregistreringer")
+try:
+    vektdata = supabase.table("vektlogg").select("*").order("dato", desc=True).limit(20).execute().data
+    for v in vektdata:
+        st.write(f"{v['bruker_id']} – {v['dato']}: {v['vekt']} kg")
+except Exception as e:
+    st.error(f"Feil ved henting av vektdata: {e}")
 
-for bruker in brukere:
-    logg = hent_vektlogg_db(bruker)
-    info = hent_brukerinfo(bruker)
-    if logg and info:
-        df = pd.DataFrame(logg)
-        if len(df) > 0:
-            siste_vekt = df["vekt"].iloc[-1]
-            startvekt = float(info.get("startvekt", 0))
-            målvekt = float(info.get("målvekt", 0))
-            fremdrift = round((startvekt - siste_vekt) / (startvekt - målvekt) * 100, 1) if startvekt > målvekt else 0
-            admin_data.append({
-                "Bruker": bruker,
-                "Kjønn": info.get("kjønn", ""),
-                "Alder": info.get("alder", ""),
-                "Startvekt": startvekt,
-                "Målvekt": målvekt,
-                "Siste vekt": siste_vekt,
-                "Fremdrift (%)": fremdrift
-            })
+# Måltider
+st.subheader("🍽️ Registrerte måltider")
+try:
+    maltider = supabase.table("måltider").select("*").order("tidspunkt", desc=True).limit(20).execute().data
+    for m in maltider:
+        st.write(f"{m['bruker_id']} – {m['tidspunkt']}: {m['kategori']} ({m['kalorier']} kcal)")
+except Exception as e:
+    st.error(f"Feil ved henting av måltider: {e}")
 
-if admin_data:
-    st.dataframe(pd.DataFrame(admin_data))
-else:
-    st.info("Ingen brukere med fullstendig data.") 
+vis_footer()
