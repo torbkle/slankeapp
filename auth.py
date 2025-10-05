@@ -1,5 +1,30 @@
 import streamlit as st
 from supabase_klient import supabase
+from supabase import create_client
+
+def signup_form():
+    st.sidebar.header("🆕 Opprett konto")
+    email = st.sidebar.text_input("E-post")
+    password = st.sidebar.text_input("Passord", type="password")
+    fornavn = st.sidebar.text_input("Fornavn")
+    etternavn = st.sidebar.text_input("Etternavn")
+    alder = st.sidebar.number_input("Alder", min_value=10, max_value=120)
+
+    if st.sidebar.button("Registrer"):
+        try:
+            auth_response = supabase.auth.sign_up({"email": email, "password": password})
+            uid = auth_response.user.id
+            supabase.table("brukere").insert({
+                "id": uid,
+                "email": email,
+                "fornavn": fornavn,
+                "etternavn": etternavn,
+                "alder": alder,
+                "rolle": "bruker"
+            }).execute()
+            st.success("✅ Konto opprettet! Sjekk e-post for bekreftelse.")
+        except Exception as e:
+            st.error(f"Feil ved registrering: {e}")
 
 def login_form():
     st.sidebar.header("🔐 Logg inn")
@@ -8,57 +33,24 @@ def login_form():
 
     if st.sidebar.button("Logg inn"):
         try:
-            response = supabase.table("brukere")\
-                .select("id, fornavn, etternavn, rolle")\
-                .eq("email", email)\
-                .eq("passord", password)\
-                .execute()
+            auth_response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            user = auth_response.user
+            uid = user.id
+            st.session_state["innlogget"] = True
+            st.session_state["bruker_id"] = uid
+            st.session_state["email"] = email
 
-            if response.data:
-                bruker = response.data[0]
-                st.session_state["innlogget"] = True
-                st.session_state["bruker_id"] = bruker["id"]
-                st.session_state["navn"] = bruker["fornavn"]
-                st.session_state["email"] = email
-                st.session_state["rolle"] = bruker.get("rolle", "bruker")
-                st.success(f"✅ Velkommen, {bruker['fornavn']}!")
-            else:
-                st.error("Feil e-post eller passord.")
+            # Hent profil
+            profile = supabase.table("brukere").select("fornavn, rolle").eq("id", uid).execute().data[0]
+            st.session_state["navn"] = profile["fornavn"]
+            st.session_state["rolle"] = profile.get("rolle", "bruker")
+            st.success(f"✅ Velkommen, {profile['fornavn']}!")
         except Exception as e:
             st.error(f"Innloggingsfeil: {e}")
 
-def registrer_ny_bruker():
-    st.sidebar.header("🆕 Opprett ny bruker")
-    fornavn = st.sidebar.text_input("Fornavn")
-    etternavn = st.sidebar.text_input("Etternavn")
-    alder = st.sidebar.number_input("Alder", min_value=10, max_value=120, step=1)
-    email = st.sidebar.text_input("E-postadresse")
-    passord = st.sidebar.text_input("Velg passord", type="password")
-
-    if st.sidebar.button("Registrer"):
-        if not (fornavn and etternavn and email and passord):
-            st.error("Alle felt må fylles ut.")
-            return
-        try:
-            eksisterende = supabase.table("brukere").select("id").eq("email", email).execute()
-            if eksisterende.data:
-                st.warning("E-postadressen er allerede registrert.")
-                return
-
-            supabase.table("brukere").insert({
-                "fornavn": fornavn.strip(),
-                "etternavn": etternavn.strip(),
-                "alder": int(alder),
-                "email": email.strip().lower(),
-                "passord": passord,
-                "rolle": "bruker"
-            }).execute()
-            st.success("✅ Bruker opprettet! Du kan nå logge inn.")
-        except Exception as e:
-            st.error(f"Feil ved registrering: {e}")
-
 def logg_ut_knapp():
     if st.sidebar.button("Logg ut"):
+        supabase.auth.sign_out()
         st.session_state.clear()
         st.success("Du er logget ut.")
 
