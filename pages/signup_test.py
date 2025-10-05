@@ -1,6 +1,7 @@
 import streamlit as st
 from supabase_klient import supabase
 import re
+import datetime
 
 st.set_page_config(page_title="Registrering", layout="centered")
 st.title("🧑‍💻 Opprett ny bruker – Slankeapp")
@@ -49,6 +50,16 @@ if st.button("Opprett bruker"):
         if not session_check.user:
             st.error("🚫 Du er ikke aktivt innlogget – RLS vil blokkere deg.")
             st.stop()
+
+        # 🛠️ Automatisk e-postbekreftelse (kun for testing)
+        nå = datetime.datetime.utcnow().isoformat()
+        bekreft_response = supabase.table("auth.users").update({"confirmed_at": nå}).eq("id", uid).execute()
+
+        if bekreft_response.status_code == 200:
+            st.info("📬 E-post er nå bekreftet automatisk for testing.")
+        else:
+            st.warning("⚠️ Klarte ikke bekrefte e-post automatisk.")
+            st.code(bekreft_response.json(), language="json")
 
         # 📥 Lagre brukerprofil i tabellen "brukere"
         st.info("Lagrer brukerprofil i `brukere`...")
