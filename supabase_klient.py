@@ -1,63 +1,8 @@
-import streamlit as st
-from supabase import create_client, Client
+# supabase_klient.py
+from supabase import create_client
+import os
 
-# 🔐 Hent hemmeligheter fra Streamlit Cloud
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://zewmjurylmyjweyqotpw.supabase.co")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpld21qdXJ5bG15andleXFvdHB3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTQwMDA5NiwiZXhwIjoyMDc0OTc2MDk2fQ.8DfBdida1EE9RggZQnkARzvod2XR00isq8cXHXOWaQ8")
 
-# 🔌 Opprett klient
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# ✅ Test tilkobling
-def test_tilkobling():
-    try:
-        response = supabase.table("brukerinfo").select("*").limit(1).execute()
-        return True
-    except Exception as e:
-        print("Supabase-feil:", e)
-        return False
-
-# 📥 Hent alle brukere
-def hent_unike_brukere():
-    try:
-        data = supabase.table("brukerinfo").select("bruker_id").execute()
-        return [row["bruker_id"] for row in data.data]
-    except Exception as e:
-        print("Feil ved henting av brukere:", e)
-        return []
-
-# 📤 Lagre brukerinfo
-def lagre_brukerinfo(info):
-    try:
-        supabase.table("brukerinfo").upsert(info).execute()
-    except Exception as e:
-        print("Feil ved lagring av brukerinfo:", e)
-
-# 📥 Hent brukerinfo
-def hent_brukerinfo(bruker_id):
-    try:
-        data = supabase.table("brukerinfo").select("*").eq("bruker_id", bruker_id).single().execute()
-        return data.data
-    except Exception as e:
-        print("Feil ved henting av brukerinfo:", e)
-        return {}
-
-# 📤 Registrer vekt
-def registrer_vekt_db(bruker_id, dato, vekt):
-    try:
-        supabase.table("vektlogg").insert({
-            "bruker_id": bruker_id,
-            "dato": dato,
-            "vekt": vekt
-        }).execute()
-    except Exception as e:
-        print("Feil ved lagring av vekt:", e)
-
-# 📥 Hent vektlogg
-def hent_vektlogg_db(bruker_id):
-    try:
-        data = supabase.table("vektlogg").select("*").eq("bruker_id", bruker_id).order("dato").execute()
-        return data.data
-    except Exception as e:
-        print("Feil ved henting av vektlogg:", e)
-        return []
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
