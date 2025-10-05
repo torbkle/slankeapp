@@ -14,6 +14,11 @@ if st.button("Registrer testbruker"):
         # 🔐 Registrer bruker via Supabase Auth
         auth_response = supabase.auth.sign_up({"email": email, "password": password})
         user = auth_response.user
+
+        if not user:
+            st.error("🚫 Registrering feilet – ingen bruker returnert.")
+            st.stop()
+
         uid = user.id
         st.success(f"✅ Registrert! Din auth.uid() er:\n`{uid}`")
 
@@ -34,8 +39,8 @@ if st.button("Registrer testbruker"):
             st.success("✅ Brukerprofil lagret! RLS-policyen fungerer.")
             st.json(profile)
         else:
-            st.error("🚫 Feil ved lagring. Sjekk RLS-policyen og datatyper.")
-            st.code(str(response), language="json")
+            st.error("🚫 Feil ved lagring. RLS-policyen blokkerer innsetting.")
+            st.code(response.json(), language="json")
 
     except Exception as e:
         st.error("🚫 Feil ved registrering.")
