@@ -1,42 +1,36 @@
 import streamlit as st
 from datetime import date
-from supabase_klient import supabase
-
-# Importer moduler
+from branding import vis_logo, vis_footer
+from auth import login_form, registrer_ny_bruker, logg_ut_knapp, krever_innlogging
 from maltidslogikk import vis_maltider, registrer_maltid
 from oppskrift_api import hent_oppskrifter
-from branding import vis_logo, vis_footer
+from supabase_klient import supabase
 
-from auth import login_form, registrer_ny_bruker, logg_ut_knapp, krever_innlogging
-
+# Autentisering
 login_form()
 registrer_ny_bruker()
 logg_ut_knapp()
 krever_innlogging()
 
-
+# Konfigurasjon
 st.set_page_config(page_title="Slankeapp", layout="centered")
-
-# Logo og tittel
 vis_logo()
 st.title("🥗 Slankeapp – Din daglige helseassistent")
 
-# Midlertidig bruker-ID (erstatt med ekte innlogging senere)
-bruker_id = "demo_bruker_123"
+# Bruker-ID fra session
+bruker_id = st.session_state.get("bruker_id")
 
-# Funksjon for å registrere dagens vekt
-def registrer_vekt(bruker_id, vekt):
+# Vektregistrering
+def registrer_vekt(vekt):
     try:
         eksisterende = supabase.table("vektlogg")\
             .select("id")\
             .eq("bruker_id", bruker_id)\
             .eq("dato", str(date.today()))\
             .execute()
-
         if eksisterende.data:
-            supabase.table("vektlogg").update({
-                "vekt": vekt
-            }).eq("id", eksisterende.data[0]["id"]).execute()
+            supabase.table("vektlogg").update({ "vekt": vekt })\
+                .eq("id", eksisterende.data[0]["id"]).execute()
         else:
             supabase.table("vektlogg").insert({
                 "bruker_id": bruker_id,
@@ -48,8 +42,7 @@ def registrer_vekt(bruker_id, vekt):
         st.error(f"Feil ved lagring: {e}")
         return False
 
-# Funksjon for å hente siste registrerte vekt
-def hent_siste_vekt(bruker_id):
+def hent_siste_vekt():
     try:
         response = supabase.table("vektlogg")\
             .select("vekt, dato")\
@@ -65,16 +58,15 @@ def hent_siste_vekt(bruker_id):
         st.error(f"Feil ved henting av vekt: {e}")
         return None, None
 
-# Seksjon: Registrer dagens vekt
+# Seksjon: Registrer vekt
 st.subheader("📏 Registrer dagens vekt")
 dagens_vekt = st.number_input("Din vekt i kg", min_value=30.0, max_value=200.0, step=0.1)
-
 if st.button("Lagre vekt"):
-    if registrer_vekt(bruker_id, dagens_vekt):
+    if registrer_vekt(dagens_vekt):
         st.success("✅ Vekt registrert!")
 
-# Seksjon: Vis siste vekt
-siste_vekt, siste_dato = hent_siste_vekt(bruker_id)
+# Seksjon: Siste vekt
+siste_vekt, siste_dato = hent_siste_vekt()
 if siste_vekt:
     st.info(f"Siste registrerte vekt: **{siste_vekt} kg** ({siste_dato})")
 else:
