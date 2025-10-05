@@ -38,13 +38,13 @@ if st.button("Opprett bruker"):
             st.error("🚫 Registrering feilet – ingen bruker returnert.")
             st.stop()
 
-        uid = user.id
+        uid = user.id  # Dette er auth.uid()
         st.success(f"✅ Registrert! Din auth.uid() er:\n`{uid}`")
 
         # 📥 Lagre brukerprofil i tabellen "brukere"
         st.info("Lagrer brukerprofil i `brukere`...")
         profile = {
-            "id": uid,
+            "id": uid,  # Må matche auth.uid() for RLS
             "email": email,
             "fornavn": fornavn,
             "etternavn": etternavn,
@@ -58,7 +58,7 @@ if st.button("Opprett bruker"):
             st.success("✅ Brukerprofil lagret! RLS-policyen fungerer.")
             st.json(profile)
         else:
-            st.error("🚫 Feil ved lagring. RLS-policyen blokkerer innsetting.")
+            st.error("🚫 RLS-policyen blokkerer innsetting.")
             st.code(response.json(), language="json")
 
     except Exception as e:
