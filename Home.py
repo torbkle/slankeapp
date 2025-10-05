@@ -1,9 +1,16 @@
 import streamlit as st
 from datetime import date
-from supabase_klient import supabase  # Sørg for at denne klienten er riktig konfigurert
+from supabase_klient import supabase
+
+# Importer moduler
+from måltidslogikk import vis_måltider, registrer_måltid
+from oppskrift_api import hent_oppskrifter
+from branding import vis_logo, vis_footer
 
 st.set_page_config(page_title="Slankeapp", layout="centered")
 
+# Logo og tittel
+vis_logo()
 st.title("🥗 Slankeapp – Din daglige helseassistent")
 
 # Midlertidig bruker-ID (erstatt med ekte innlogging senere)
@@ -12,7 +19,6 @@ bruker_id = "demo_bruker_123"
 # Funksjon for å registrere dagens vekt
 def registrer_vekt(bruker_id, vekt):
     try:
-        # Sjekk om det allerede finnes en registrering for i dag
         eksisterende = supabase.table("vektlogg")\
             .select("id")\
             .eq("bruker_id", bruker_id)\
@@ -20,12 +26,10 @@ def registrer_vekt(bruker_id, vekt):
             .execute()
 
         if eksisterende.data:
-            # Oppdater eksisterende rad
             supabase.table("vektlogg").update({
                 "vekt": vekt
             }).eq("id", eksisterende.data[0]["id"]).execute()
         else:
-            # Sett inn ny rad
             supabase.table("vektlogg").insert({
                 "bruker_id": bruker_id,
                 "dato": str(date.today()),
@@ -68,4 +72,16 @@ if siste_vekt:
 else:
     st.warning("Ingen vekt registrert enda.")
 
-# Du kan legge til flere seksjoner her, f.eks. oppskrifter, kaloriberegning, dashboard osv.
+# Seksjon: Måltider
+st.subheader("🍽️ Dine måltider i dag")
+vis_måltider(bruker_id)
+
+st.subheader("➕ Registrer nytt måltid")
+registrer_måltid(bruker_id)
+
+# Seksjon: Oppskrifter
+st.subheader("📸 Oppskriftsforslag")
+hent_oppskrifter()
+
+# Footer
+vis_footer()
