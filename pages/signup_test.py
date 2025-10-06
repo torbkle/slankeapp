@@ -9,7 +9,7 @@ st.title("🧑‍💻 Opprett ny bruker – Slankeapp")
 
 # 📧 Registreringsskjema
 st.subheader("Fyll inn informasjon")
-email = st.text_input("E-post")
+email = st.text_input("E-post").strip()
 password = st.text_input("Passord", type="password")
 fornavn = st.text_input("Fornavn")
 etternavn = st.text_input("Etternavn")
@@ -17,7 +17,7 @@ alder = st.number_input("Alder", min_value=0, max_value=120, value=30)
 
 # 📋 Validering
 def er_gyldig_epost(epost):
-    return re.match(r"[^@]+@[^@]+\\.[^@]+", epost)
+    return re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", epost)
 
 def er_gyldig_passord(pw):
     return len(pw) >= 8 and any(c.isdigit() for c in pw)
