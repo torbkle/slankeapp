@@ -1,8 +1,6 @@
 import streamlit as st
 from supabase_klient import supabase
-from supabase_admin import supabase_admin
 from bekreft_epost import bekreft_epost
-
 import re
 import datetime
 
@@ -19,7 +17,7 @@ alder = st.number_input("Alder", min_value=0, max_value=120, value=30)
 
 # 📋 Validering
 def er_gyldig_epost(epost):
-    return re.match(r"[^@]+@[^@]+\.[^@]+", epost)
+    return re.match(r"[^@]+@[^@]+\\.[^@]+", epost)
 
 def er_gyldig_passord(pw):
     return len(pw) >= 8 and any(c.isdigit() for c in pw)
@@ -54,17 +52,13 @@ if st.button("Opprett bruker"):
             st.error("🚫 Du er ikke aktivt innlogget – RLS vil blokkere deg.")
             st.stop()
 
-        # 🛠️ Automatisk e-postbekreftelse via service role
-        nå = datetime.datetime.utcnow().isoformat()
-        bekreft_response = supabase_admin.table("auth.users").update({
-            "confirmed_at": nå
-        }).eq("id", uid).execute()
-
+        # 📬 Bekreft e-post via Admin API
+        bekreft_response = bekreft_epost(uid)
         if bekreft_response.status_code == 200:
-            st.info("📬 E-post er nå bekreftet automatisk for testing.")
+            st.info("📬 E-post bekreftet via Admin API.")
         else:
-            st.warning("⚠️ Klarte ikke bekrefte e-post automatisk.")
-            st.code(bekreft_response.json(), language="json")
+            st.warning("⚠️ Klarte ikke bekrefte e-post.")
+            st.code(bekreft_response.text)
 
         # 📥 Lagre brukerprofil i tabellen "brukere"
         st.info("Lagrer brukerprofil i `brukere`...")
