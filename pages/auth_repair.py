@@ -78,3 +78,5 @@ if st.button("Slett og registrer på nytt"):
     except Exception as e:
         st.error("🚫 Feil under Auth-reparasjon.")
         st.code(str(e))
+
+st.markdown("📋 [Se registreringslogg](./registreringslogg)")
