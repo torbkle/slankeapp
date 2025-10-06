@@ -25,7 +25,7 @@ def er_gyldig_passord(pw):
 # 🔘 Registreringsknapp
 if st.button("Opprett bruker"):
     if not er_gyldig_epost(email):
-        st.error("🚫 Ugyldig e-postadresse.")
+        st.error(f"🚫 Ugyldig e-postadresse: `{email}`")
         st.stop()
     if not er_gyldig_passord(password):
         st.error("🚫 Passordet må være minst 8 tegn og inneholde tall.")
