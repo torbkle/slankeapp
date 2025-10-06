@@ -1,6 +1,10 @@
 from supabase import create_client
+from dotenv import load_dotenv
+import os
 
-url = "https://zewmjurylmyjweyqotpw.supabase.co"
-service_role_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpld21qdXJ5bG15andleXFvdHB3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTQwMDA5NiwiZXhwIjoyMDc0OTc2MDk2fQ.8DfBdida1EE9RggZQnkARzvod2XR00isq8cXHXOWaQ8"  # Hentes fra Supabase → Project Settings → API
+load_dotenv()
+
+url = os.getenv("SUPABASE_URL")
+service_role_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
 supabase_admin = create_client(url, service_role_key)
