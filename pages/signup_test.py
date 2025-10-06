@@ -1,5 +1,6 @@
 import streamlit as st
 from supabase_klient import supabase
+from supabase_admin import supabase_admin
 import re
 import datetime
 
@@ -51,9 +52,11 @@ if st.button("Opprett bruker"):
             st.error("🚫 Du er ikke aktivt innlogget – RLS vil blokkere deg.")
             st.stop()
 
-        # 🛠️ Automatisk e-postbekreftelse (kun for testing)
+        # 🛠️ Automatisk e-postbekreftelse via service role
         nå = datetime.datetime.utcnow().isoformat()
-        bekreft_response = supabase.table("auth.users").update({"confirmed_at": nå}).eq("id", uid).execute()
+        bekreft_response = supabase_admin.table("auth.users").update({
+            "confirmed_at": nå
+        }).eq("id", uid).execute()
 
         if bekreft_response.status_code == 200:
             st.info("📬 E-post er nå bekreftet automatisk for testing.")
