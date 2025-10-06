@@ -1,20 +1,31 @@
-import requests
 import os
-import datetime
-from dotenv import load_dotenv
+import requests
 
-load_dotenv()
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-def bekreft_epost(uid):
-    url = f"https://zewmjurylmyjweyqotpw.supabase.co/auth/v1/admin/users/{uid}"
+def bekreft_epost(uid: str):
+    if not SUPABASE_URL or not SERVICE_ROLE_KEY:
+        raise ValueError("SUPABASE_URL eller SERVICE_ROLE_KEY mangler i miljøvariabler.")
+
+    url = f"{SUPABASE_URL}/auth/v1/admin/users/{uid}"
     headers = {
-        "apikey": os.getenv("SUPABASE_SERVICE_ROLE_KEY"),
-        "Authorization": f"Bearer {os.getenv('SUPABASE_SERVICE_ROLE_KEY')}",
+        "Authorization": f"Bearer {SERVICE_ROLE_KEY}",
         "Content-Type": "application/json"
     }
     payload = {
-        "email_confirmed_at": datetime.datetime.utcnow().isoformat()
+        "email_confirmed": True
     }
 
-    response = requests.patch(url, headers=headers, json=payload)
-    return response
+    try:
+        response = requests.patch(url, headers=headers, json=payload)
+        if response.status_code == 200:
+            print(f"✅ E-post bekreftet for UID: {uid}")
+        else:
+            print(f"⚠️ Feil ved bekreftelse – status {response.status_code}")
+            print(response.text)
+        return response
+    except Exception as e:
+        print("🚫 Feil under API-kall til Supabase Admin.")
+        print(str(e))
+        raise
