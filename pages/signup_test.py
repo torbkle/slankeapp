@@ -43,22 +43,23 @@ if st.button("Opprett bruker"):
         uid = user.id
         st.success(f"✅ Registrert! Din auth.uid() er:\n`{uid}`")
 
-        # 🔐 Logg inn for å aktivere authenticated session
-        supabase.auth.sign_in_with_password({"email": email, "password": password})
+        # 📬 Bekreft e-post via Admin API
+        bekreft_response = bekreft_epost(uid)
+        if bekreft_response.status_code == 200:
+            st.info("📬 E-post bekreftet via Admin API.")
+
+            # 🔁 Tving ny innlogging for å aktivere authenticated session
+            supabase.auth.sign_out()
+            supabase.auth.sign_in_with_password({"email": email, "password": password})
+        else:
+            st.warning("⚠️ Klarte ikke bekrefte e-post.")
+            st.code(bekreft_response.text)
 
         # 🔍 Bekreft aktiv sesjon
         session_check = supabase.auth.get_user()
         if not session_check.user:
             st.error("🚫 Du er ikke aktivt innlogget – RLS vil blokkere deg.")
             st.stop()
-
-        # 📬 Bekreft e-post via Admin API
-        bekreft_response = bekreft_epost(uid)
-        if bekreft_response.status_code == 200:
-            st.info("📬 E-post bekreftet via Admin API.")
-        else:
-            st.warning("⚠️ Klarte ikke bekrefte e-post.")
-            st.code(bekreft_response.text)
 
         # 📥 Lagre brukerprofil i tabellen "brukere"
         st.info("Lagrer brukerprofil i `brukere`...")
@@ -68,7 +69,8 @@ if st.button("Opprett bruker"):
             "fornavn": fornavn,
             "etternavn": etternavn,
             "alder": alder,
-            "rolle": "bruker"
+            "rolle": "bruker",
+            "opprettet": datetime.datetime.utcnow().isoformat()
         }
 
         response = supabase.table("brukere").insert(profile).execute()
