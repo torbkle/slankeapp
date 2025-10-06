@@ -4,4 +4,6 @@ seaborn
 matplotlib
 supabase
 python-dotenv
+requests
+
 
