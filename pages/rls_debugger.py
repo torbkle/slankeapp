@@ -14,10 +14,10 @@ if st.button("Test RLS-innsetting"):
     login_response = supabase.auth.sign_in_with_password({"email": email, "password": password})
     user = login_response.user
     st.success(f"✅ Innlogget som: {user.email}")
-except Exception as e:
-    st.error("🚫 Innlogging feilet – Supabase Auth kastet en feil.")
-    st.code(str(e))
-    st.stop()
+    except Exception as e:
+        st.error("🚫 Innlogging feilet – Supabase Auth kastet en feil.")
+        st.code(str(e))
+        st.stop()
 
     user = login_response.user
 
