@@ -2,36 +2,42 @@ import streamlit as st
 from supabase_klient import supabase
 
 st.set_page_config(page_title="Auth Debugger", layout="centered")
-st.title("🛡️ Auth Debugger – Slankeapp")
+st.title("🔍 Supabase Auth Debugger")
 
-# 🔍 Sjekk aktiv bruker
-user_response = supabase.auth.get_user()
-user = user_response.user
+email = st.text_input("E-post").strip()
+password = st.text_input("Passord", type="password")
 
-if user:
-    uid = user.id
-    st.success(f"✅ Du er innlogget som authenticated bruker.\n`auth.uid()` = `{uid}`")
-else:
-    st.error("🚫 Du er ikke innlogget – Supabase tolker deg som 'anon'.")
-    st.stop()
+if st.button("Test innlogging og sesjon"):
+    try:
+        # 🔐 Logg inn
+        login_response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+        user = login_response.user
+        session = login_response.session
 
-# 🧪 Test innsetting i `brukere`
-st.subheader("Test RLS-policy for `brukere`")
-if st.button("Test innsetting"):
-    test_profile = {
-        "id": uid,
-        "email": "debug@slankeapp.no",
-        "fornavn": "Debug",
-        "etternavn": "Bruker",
-        "alder": 99,
-        "rolle": "debug"
-    }
+        if not user:
+            st.error("🚫 Innlogging feilet – ingen bruker returnert.")
+            st.stop()
 
-    response = supabase.table("brukere").insert(test_profile).execute()
+        st.success(f"✅ Innlogget som `{user.email}`")
+        st.write(f"auth.uid(): `{user.id}`")
 
-    if response.status_code == 201:
-        st.success("✅ RLS-policyen godtar innsetting.")
-        st.json(test_profile)
-    else:
-        st.error("🚫 RLS-policyen blokkerer innsetting.")
-        st.code(response.json(), language="json")
+        # 📬 E-poststatus
+        if user.email_confirmed_at:
+            st.info(f"📬 E-post bekreftet: `{user.email_confirmed_at}`")
+        else:
+            st.warning("⚠️ E-post ikke bekreftet – RLS vil sannsynligvis blokkere deg.")
+
+        # 🔑 Tokens
+        st.subheader("🔑 Tokens")
+        st.code(session.access_token, language="text")
+
+        # 🧪 Sjekk aktiv sesjon
+        session_check = supabase.auth.get_user()
+        if session_check and session_check.user:
+            st.success("✅ Aktiv sesjon bekreftet.")
+        else:
+            st.error("🚫 Ingen aktiv sesjon – du er ikke authenticated.")
+
+    except Exception as e:
+        st.error("🚫 Supabase Auth kastet en feil.")
+        st.code(str(e))
