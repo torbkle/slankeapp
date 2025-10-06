@@ -1,6 +1,8 @@
 import streamlit as st
 from supabase_klient import supabase
 from supabase_admin import supabase_admin
+from bekreft_epost import bekreft_epost
+
 import re
 import datetime
 
